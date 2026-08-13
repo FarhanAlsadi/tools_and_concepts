@@ -4,8 +4,6 @@ import {
   KeyRound, MessageSquare, Flame, BookOpen, Wifi, Network, ShieldAlert, Activity, HelpCircle, Swords, MonitorDot, VenetianMask, Fingerprint, FolderOpen, Zap, ShieldCheck, Database, Code2, Gamepad2, Fish, FileLock2, Bug, Camera, ScanSearch, Cookie, Send, ArrowDownUp, Table2
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { PATHS, pathRooms } from '../data/paths'
-import { getDone } from '../utils/progress'
 
 export const LESSONS = [
   {
@@ -111,8 +109,6 @@ export default function Welcome() {
   const navigate = useNavigate()
   const { lang } = useApp()
   const isAr = lang === 'ar'
-  const done = getDone()
-  const num = n => isAr ? Number(n).toLocaleString('ar-EG') : String(n)
 
   return (
     <div className="min-h-screen bg-cc-cream" dir={isAr ? 'rtl' : 'ltr'}>
