@@ -93,16 +93,6 @@ export const LESSONS = [
     descEn: 'Run the real hydra with the rockyou.txt wordlist to try thousands of passwords against the login form until it cracks the admin account and opens the admin panel',
     page: '/lx-hydra', typeAr: 'مختبر', typeEn: 'Lab',
   },
-  {
-    icon: <Gamepad2 className="w-5 h-5" />,
-    color: 'bg-indigo-100 text-indigo-700',
-    badge: 'bg-indigo-50 text-indigo-600 border-indigo-200',
-    titleAr: 'ألعاب التفكير',
-    titleEn: 'Mind Games',
-    descAr: 'استرِح من الاختراق وتحدَّ عقلك بألعاب ذكاء ممتعة ومتدرّجة الصعوبة عبر ٥ مستويات',
-    descEn: 'Take a break from hacking and challenge your mind with fun brain games across 5 difficulty levels',
-    page: '/mind-games', typeAr: 'ألعاب', typeEn: 'Games',
-  },
 ]
 
 export default function Welcome() {

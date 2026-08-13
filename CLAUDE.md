@@ -15,14 +15,11 @@ removed.
 
 ## Architecture
 
-- **`webapp/app.py`** — minimal Flask server. Serves the SPA from `static/` at
-  the site root, with an index.html fallback for unknown paths. The only backend
-  endpoints are two read-only routes, `GET /api/xo/subjects` and
-  `GET /api/xo/questions`, which read `webapp/data/xo_questions.json` (used by the
-  in-app "Mind Games" quiz and the embedded `csyc-xo` trivia game). No auth, no
-  DB, no rate limiting.
+- **`webapp/app.py`** — minimal static Flask server. Serves the SPA from
+  `static/` at the site root, with an index.html fallback for unknown paths.
+  No API, no database, no auth.
 - **`webapp/static/`** — the built SPA (`index.html`, `assets/`, `images/`,
-  `fonts/`, `csyc-xo/`). **This is a build artifact — do not hand-edit it.**
+  `fonts/`). **This is a build artifact — do not hand-edit it.**
 - **`hacking-edu/`** — the editable React/Vite source that produces `static/`.
 
 ## Changing the front end
@@ -40,7 +37,7 @@ Key source files:
 - `src/context/AppContext.jsx` — locks `lang='ar'` and `theme='light'` (toggles
   removed; toggle functions kept as no-ops so consumers don't break).
 - `src/components/Navbar.jsx` — top bar (language/theme toggle buttons removed).
-- `src/pages/Welcome.jsx` — landing hub: learning paths + lessons grid.
+- `src/pages/Welcome.jsx` — landing page: the lessons grid.
 - `src/pages/` — one file per lesson/lab.
 - `vite.config.js` — `base: '/'`, single entry (`index.html`).
 

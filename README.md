@@ -1,8 +1,9 @@
 # Ethical Hacking Lessons
 
-An interactive, Arabic (RTL) web-security learning platform — ~50 hands-on
-lessons and labs (SQL injection, XSS, CSRF, DNS, firewalls, SIEM, Linux
-terminal, phishing, and more), all running as safe client-side simulations.
+An interactive, Arabic (RTL) web-security learning platform — hands-on lessons
+and labs (brute-force, ciphers, VPN, DoS/DDoS, phishing, ransomware, and a
+real-command Linux track with Gobuster & Hydra), all running as safe
+client-side simulations.
 
 The site is a built React/Vite single-page app served by a tiny Flask app.
 It is **Arabic + light-theme only** and carries no third-party branding.
@@ -10,11 +11,9 @@ It is **Arabic + light-theme only** and carries no third-party branding.
 ## Layout
 
 ```
-webapp/            Minimal Flask server
-  app.py             Serves the SPA + two read-only /api/xo/* endpoints
-  static/            Built SPA (index.html, assets/, images/, fonts/, csyc-xo/)
-  data/
-    xo_questions.json  Trivia bank for the Mind Games / XO quiz
+webapp/            Minimal static Flask server
+  app.py             Serves the built SPA (no database, no API)
+  static/            Built SPA (index.html, assets/, images/, fonts/)
 hacking-edu/       Editable React/Vite source for the SPA
 ```
 

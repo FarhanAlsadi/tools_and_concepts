@@ -16,7 +16,6 @@ import PageDDoS from './pages/PageDDoS'
 import PagePasswordGenerator from './pages/PagePasswordGenerator'
 import PagePhishing from './pages/PagePhishing'
 import PageRansomware from './pages/PageRansomware'
-import PageMindGames from './pages/PageMindGames'
 import PageLinuxHub from './pages/PageLinuxHub'
 import PageLxTerminal from './pages/PageLxTerminal'
 import PageLxFs from './pages/PageLxFs'
@@ -44,7 +43,6 @@ export default function App() {
         <Route path="/lx-gobuster" element={<PageLxGobuster />} />
         <Route path="/lx-hydra" element={<PageLxHydra />} />
         <Route path="/lx-challenge" element={<PageLxChallenge />} />
-        <Route path="/mind-games" element={<PageMindGames />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
