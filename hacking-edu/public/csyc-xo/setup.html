@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/styles.css">
+  <style>
+    body { padding-bottom: 40px; }
+
+    .setup-panel {
+      max-width: 740px;
+      margin: 80px auto 40px;
+      padding: 0 16px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--gold-dark); }
+
+    .setup-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 32px;
+      box-shadow: 0 4px 24px rgba(14,31,57,0.07);
+    }
+
+    .setup-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .field-row input[type="number"] {
+      width: 90px;
+      padding: 8px 12px;
+      background: var(--cream);
+      color: var(--navy);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      outline: none;
+    }
+    .field-row input:focus { border-color: var(--gold); }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--gold-dark);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin: 20px 0 8px;
+    }
+
+    /* Concept chips */
+    .concept-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+    .chip {
+      padding: 5px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--cream);
+      color: var(--text-2);
+      font-family: 'Montserrat', sans-serif;
+      transition: all 0.15s;
+    }
+    .chip.on {
+      border-color: var(--gold);
+      background: rgba(252,173,15,0.12);
+      color: var(--gold-dark);
+      font-weight: 700;
+    }
+    .chip-actions {
+      font-size: 0.75rem;
+      color: var(--text-2);
+      margin-bottom: 6px;
+    }
+    .chip-actions a {
+      color: var(--gold-dark);
+      cursor: pointer;
+      margin-left: 10px;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .chip-actions a:hover { color: var(--navy); }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      color: var(--text-2);
+      font-weight: 600;
+    }
+    .toolbar a { color: var(--gold-dark); cursor: pointer; text-decoration: underline; font-weight: 600; }
+    .toolbar a:hover { color: var(--navy); }
+
+    /* Question list */
+    .question-list {
+      max-height: 42vh;
+      overflow-y: auto;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      background: var(--cream);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(252,173,15,0.4) transparent;
+    }
+    .q-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .q-row:last-child { border-bottom: none; }
+    .q-row:hover { background: rgba(14,31,57,0.03); }
+    .q-row label {
+      flex: 1;
+      cursor: pointer;
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .q-row .concept-tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--gold-dark);
+      background: rgba(252,173,15,0.12);
+      padding: 1px 7px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .q-row input[type="checkbox"] {
+      margin-top: 2px;
+      transform: scale(1.3);
+      cursor: pointer;
+      accent-color: var(--gold);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--text-2);
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+    .empty-state strong { color: var(--gold-dark); }
+
+    /* Start button */
+    .start-btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      font-family: 'Montserrat', sans-serif;
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(252,173,15,0.3);
+    }
+    .start-btn:hover:not(:disabled) {
+      background: var(--gold-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(252,173,15,0.4);
+    }
+    .start-btn:disabled {
+      background: var(--border);
+      color: var(--text-2);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<div class="logo-container">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="index.html" class="manage-link">← Subjects</a>
+  </div>
+</div>
+
+<div class="setup-panel">
+  <a href="index.html" class="back-link">← Back to Subjects</a>
+
+  <div class="setup-card">
+    <h1 class="setup-title" id="subject-title">Setup</h1>
+
+    <!-- Timer setting -->
+    <div class="field-row">
+      <label for="seconds">⏱ Seconds per question:</label>
+      <input type="number" id="seconds" value="30" min="5" max="300">
+    </div>
+
+    <!-- Concept / lesson filter -->
+    <div id="concepts-section" style="display:none">
+      <div class="section-label">Filter by Lesson</div>
+      <div class="concept-chips" id="concepts"></div>
+      <div class="chip-actions">
+        <a id="concepts-all">Select All</a>
+        <a id="concepts-none">Clear All</a>
+      </div>
+    </div>
+
+    <!-- Question picker -->
+    <div class="section-label">Questions</div>
+    <div class="toolbar">
+      <span id="count-label">0 / 0 selected</span>
+      <span>
+        <a id="select-all">Select all visible</a>
+        &nbsp;·&nbsp;
+        <a id="deselect-all">Deselect all</a>
+      </span>
+    </div>
+    <div class="question-list" id="list">Loading...</div>
+
+    <button class="start-btn" id="start" disabled>▶ &nbsp;Start Game</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const params  = new URLSearchParams(window.location.search);
+const subject = params.get('subject') || '';
+document.getElementById('subject-title').textContent = subject.replaceAll('_', ' ') || 'Setup';
+
+let allQuestions      = [];
+let selectedConcepts  = new Set();   // nothing pre-selected
+let selectedQuestions = new Set();   // nothing pre-selected
+
+const listEl         = document.getElementById('list');
+const startBtn       = document.getElementById('start');
+const countLabel     = document.getElementById('count-label');
+const conceptsEl     = document.getElementById('concepts');
+const conceptsSection= document.getElementById('concepts-section');
+
+const formatConcept  = c => (c || 'General').replaceAll('_', ' ');
+const escapeText     = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+function visibleQuestions() {
+  return allQuestions.filter(q => selectedConcepts.has(q.legacy_concept || ''));
+}
+
+function updateCount() {
+  const vis    = visibleQuestions();
+  const picked = vis.filter(q => selectedQuestions.has(q.id)).length;
+  countLabel.textContent = `${picked} / ${vis.length} selected`;
+  startBtn.disabled = picked === 0;
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderList() {
+  const vis = visibleQuestions();
+  if (vis.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">Select a <strong>lesson above</strong> to browse questions.</div>';
+    updateCount(); return;
+  }
+  listEl.innerHTML = '';
+  vis.forEach(q => {
+    const row = document.createElement('div');
+    row.className = 'q-row';
+    const cb = document.createElement('input');
+    cb.type    = 'checkbox';
+    cb.checked = selectedQuestions.has(q.id);
+    cb.id      = `q-${q.id}`;
+    cb.dataset.qid = q.id;
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedQuestions.add(q.id);
+      else selectedQuestions.delete(q.id);
+      updateCount();
+    });
+    const lbl = document.createElement('label');
+    lbl.htmlFor = cb.id;
+    const tag = q.legacy_concept ? ` <span class="concept-tag">${escapeText(formatConcept(q.legacy_concept))}</span>` : '';
+    lbl.innerHTML = `${escapeText(q.question)}${tag}`;
+    row.appendChild(cb);
+    row.appendChild(lbl);
+    listEl.appendChild(row);
+  });
+  updateCount();
+}
+
+function renderConcepts() {
+  const conceptSet  = new Set(allQuestions.map(q => q.legacy_concept || ''));
+  const conceptList = [...conceptSet].sort();
+  if (conceptList.length <= 1 && conceptList[0] === '') {
+    conceptsSection.style.display = 'none';
+    // only one concept (or none) — auto-select it so questions show
+    selectedConcepts = new Set(conceptList);
+    return;
+  }
+  conceptsSection.style.display = 'block';
+  conceptsEl.innerHTML = '';
+  conceptList.forEach(c => {
+    const count = allQuestions.filter(q => (q.legacy_concept || '') === c).length;
+    const chip  = document.createElement('button');
+    chip.type             = 'button';
+    chip.className        = 'chip';        // off by default
+    chip.dataset.concept  = c;
+    chip.textContent      = `${formatConcept(c)} (${count})`;
+    chip.addEventListener('click', () => {
+      if (selectedConcepts.has(c)) { selectedConcepts.delete(c); chip.classList.remove('on'); }
+      else { selectedConcepts.add(c); chip.classList.add('on'); }
+      renderList();
+    });
+    conceptsEl.appendChild(chip);
+  });
+  // selectedConcepts stays empty — user must pick
+}
+
+async function load() {
+  if (!subject) { listEl.innerHTML = '<span style="color:#EF4444">No subject selected</span>'; return; }
+  try {
+    const res  = await fetch(`/api/xo/questions?subject=${encodeURIComponent(subject)}`);
+    const data = await res.json();
+    allQuestions = data.questions || [];
+    if (allQuestions.length === 0) {
+      listEl.innerHTML = `<div class="empty-state">No questions in this subject yet. <a href="editor.html" style="color:var(--gold-dark)">Add some</a>.</div>`;
+      countLabel.textContent = '0 / 0 selected';
+      return;
+    }
+    // no pre-selection — user picks what they want
+    renderConcepts();
+    renderList();
+  } catch (e) {
+    listEl.innerHTML = `<span style="color:#EF4444;font-size:0.85rem;">Failed: ${e.message}</span>`;
+  }
+}
+
+document.getElementById('select-all').onclick   = () => { visibleQuestions().forEach(q => selectedQuestions.add(q.id));    renderList(); };
+document.getElementById('deselect-all').onclick  = () => { visibleQuestions().forEach(q => selectedQuestions.delete(q.id)); renderList(); };
+document.getElementById('concepts-all').onclick  = () => {
+  document.querySelectorAll('.chip').forEach(c => { c.classList.add('on'); selectedConcepts.add(c.dataset.concept); });
+  renderList();
+};
+document.getElementById('concepts-none').onclick = () => {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  selectedConcepts.clear(); renderList();
+};
+
+startBtn.onclick = () => {
+  const vis    = visibleQuestions();
+  const picked = vis.filter(q => selectedQuestions.has(q.id));
+  if (picked.length === 0) return;
+  const seconds = Math.max(5, Math.min(300, parseInt(document.getElementById('seconds').value, 10) || 30));
+  sessionStorage.setItem('xoGameConfig', JSON.stringify({
+    subject,
+    questions: shuffle(picked).map(q => ({
+      type:    q.type || 'MCQ',
+      question:q.question,
+      options: q.options,
+      answer:  q.answer,
+    })),
+    secondsPerQuestion: seconds,
+  }));
+  window.location.href = 'home.html';
+};
+
+window.onload = load;
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XO Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/home-styles.css">
+</head>
+<body>
+
+<!-- Top nav bar -->
+<div class="logo-container">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="index.html" class="manage-link">← Subjects</a>
+  </div>
+</div>
+
+<div class="game-wrapper">
+
+  <!-- ── Left panel: status + question ── -->
+  <div class="container2">
+
+    <!-- Score badges -->
+    <div class="score-row">
+      <div class="score-badge x-badge">
+        <div class="badge-symbol">✕</div>
+        <div class="badge-score" id="score-x">0</div>
+        <div class="badge-name">TEAM X</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="score-badge o-badge">
+        <div class="badge-symbol">○</div>
+        <div class="badge-score" id="score-o">0</div>
+        <div class="badge-name">TEAM O</div>
+      </div>
+    </div>
+
+    <!-- Game status -->
+    <div id="start-message"></div>
+    <div id="current-player" class="hidden"></div>
+    <div id="timer" class="hidden"></div>
+
+    <!-- Question -->
+    <div id="question-container" class="hidden">
+      <div id="question-label">📋 Question</div>
+      <!-- Bilingual question body: EN left ←→ AR right -->
+      <div id="question-bilingual">
+        <div id="question-en" class="question-lang question-lang-en" style="display:none;"></div>
+        <div id="question-ar" class="question-lang question-lang-ar"></div>
+      </div>
+      <div id="options"></div>
+    </div>
+
+    <!-- Reset -->
+    <div class="reset-row">
+      <button id="reset">↺ &nbsp;Reset Game</button>
+    </div>
+  </div>
+
+  <!-- ── Right panel: board ── -->
+  <div class="container">
+    <h2 id="current-player-board" style="min-height:1.6rem;font-size:0.9rem;"></h2>
+
+    <div id="board">
+      <div class="cell empty" data-index="0"></div>
+      <div class="cell empty" data-index="1"></div>
+      <div class="cell empty" data-index="2"></div>
+      <div class="cell empty" data-index="3"></div>
+      <div class="cell empty" data-index="4"></div>
+      <div class="cell empty" data-index="5"></div>
+      <div class="cell empty" data-index="6"></div>
+      <div class="cell empty" data-index="7"></div>
+      <div class="cell empty" data-index="8"></div>
+    </div>
+
+    <div class="swap-legend">
+      <span class="dot"></span>
+      <span>Red-glowing cells can be stolen — click to challenge!</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

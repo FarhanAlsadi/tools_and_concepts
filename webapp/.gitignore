@@ -1,0 +1,5 @@
+venv/
+__pycache__/
+data/db.json
+.env
+online-scheduling-491514-2ad66a5711b9.json

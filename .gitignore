@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+webapp/.venv/
+webapp/venv/
+
+# Secrets / local
+.env
+credentials.json
+token.json
+.tmp/
+.DS_Store
+
+# Frontend build tooling (hacking-edu source)
+hacking-edu/node_modules/
+hacking-edu/dist/
+
+# Local editor/preview config
+.claude/launch.json

@@ -1,0 +1,138 @@
+/* ── CamelCode XO Game — Shared Styles ───────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --navy:      #0E1F39;
+  --navy-2:    #152d50;
+  --gold:      #FCAD0F;
+  --gold-dark: #d99000;
+  --blue:      #2563eb;   /* CamelCode accent blue — used for O player */
+  --blue-bg:   rgba(37,99,235,0.08);
+  --blue-border: rgba(37,99,235,0.35);
+  --cream:     #f7f3ee;
+  --white:     #ffffff;
+  --green:     #10B981;
+  --red:       #EF4444;
+  --text:      #0E1F39;
+  --text-2:    rgba(14,31,57,0.55);
+  --border:    rgba(14,31,57,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--cream);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ── Fixed top navbar ──────────────────────────────────────── */
+.logo-container {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  background: var(--navy);
+  border-bottom: 3px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 58px;
+}
+
+.logo-container img.site-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ── Typography ────────────────────────────────────────────── */
+h1 {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--navy);
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--navy);
+  text-align: center;
+}
+
+.hidden { display: none !important; }
+footer  { display: none; }
+
+/* ── Subject select buttons ────────────────────────────────── */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+
+.button-group .button {
+  padding: 1rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  border: 2px solid var(--navy);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  max-width: 360px;
+  letter-spacing: 0.3px;
+}
+
+.button-group .button:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--navy);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(252,173,15,0.3);
+}
+
+/* ── Nav utility links ─────────────────────────────────────── */
+.nav-link {
+  color: rgba(255,255,255,0.55);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-link:hover { color: var(--gold); border-color: var(--gold); }
+
+.manage-link {
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.manage-link:hover { color: var(--gold); border-color: var(--gold); }
+
+/* ── White card container (index/setup) ────────────────────── */
+.container {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  width: 90%;
+  max-width: 520px;
+  margin: 90px auto 40px;
+  box-shadow: 0 4px 24px rgba(14,31,57,0.07);
+  text-align: center;
+}

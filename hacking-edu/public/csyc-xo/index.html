@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XO Game — Select Subject</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/styles.css">
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .hero {
+      margin-top: 100px;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(252,173,15,0.12);
+      border: 1px solid rgba(252,173,15,0.3);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .container { margin-top: 24px; }
+  </style>
+<script src="data.js"></script>
+  <script>
+    async function loadCourses() {
+      const container = document.querySelector('.button-group');
+      try {
+        const response = await fetch('/api/xo/subjects');
+        let data;
+        try {
+          data = await response.json();
+        } catch (_) {
+          // Server returned non-JSON (HTML error page) — show status
+          container.innerHTML = `<p style="color:#EF4444;font-size:0.85rem;">Server error ${response.status}: the Flask server may not have SUPABASE_URL / SUPABASE_SERVICE_KEY set. Check the server logs.</p>`;
+          return;
+        }
+        if (data.error) {
+          container.innerHTML = `<p style="color:#EF4444;font-size:0.82rem;">API error: ${data.error}</p>`;
+          return;
+        }
+        const subjects = data.subjects || [];
+        if (subjects.length === 0) {
+          container.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-size:0.9rem;">No subjects yet. <a href="editor.html" style="color:#FCAD0F">Add questions</a>.</p>';
+          return;
+        }
+        subjects.forEach(subject => {
+          const btn = document.createElement('button');
+          btn.textContent = subject.replaceAll('_', ' ');
+          btn.className   = 'button';
+          btn.onclick     = () => { window.location.href = `setup.html?subject=${encodeURIComponent(subject)}`; };
+          container.appendChild(btn);
+        });
+      } catch (e) {
+        container.innerHTML = `<p style="color:#EF4444;font-size:0.85rem;">Failed to load: ${e.message}</p>`;
+      }
+    }
+    window.onload = loadCourses;
+  </script>
+</head>
+<body>
+
+<!-- Nav -->
+<div class="logo-container">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="editor.html" class="manage-link">Manage Questions</a>
+  </div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">🎮 Educational Game</div>
+  <h1>XO Game</h1>
+  <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:0;">Answer questions to claim the board — steal your opponent's cells!</p>
+</div>
+
+<!-- Subject buttons -->
+<div class="container">
+  <p style="font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:0.5rem;">Select a Subject</p>
+  <div class="button-group"></div>
+</div>
+
+</body>
+</html>
