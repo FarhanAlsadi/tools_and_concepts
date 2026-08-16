@@ -6,9 +6,11 @@ import Explanation from '../components/Explanation'
 
 /* ────────────────────────────────────────────────────────────────────────────
    RANSOMWARE SIMULATION (safe, in-page only)
-   The student opens a booby-trapped email attachment. Their "files" get locked
-   one by one, a ransom note with a countdown appears, and then they choose a
-   response — learning that BACKUPS (not paying) are the real defense.
+   Flow: the student sees an EMAIL inbox with a booby-trapped attachment. When
+   they download it, the view switches to their DESKTOP and the "files" get
+   locked one by one. A ransom note with a countdown appears, and then a
+   multiple-choice question asks for their response — teaching that BACKUPS (not
+   paying) are the real defense.
    ──────────────────────────────────────────────────────────────────────────── */
 
 const INIT_FILES = [
@@ -42,7 +44,7 @@ export default function PageRansomware() {
   const { lang } = useApp()
   const ar = lang === 'ar'
 
-  const [phase, setPhase]     = useState('idle')   // idle | encrypting | ransom | paid | restored | rebooted
+  const [phase, setPhase]     = useState('email')  // email | desktop | encrypting | ransom | paid | restored | rebooted
   const [locked, setLocked]   = useState(() => INIT_FILES.map(() => false))
   const [secs, setSecs]       = useState(71 * 3600 + 59 * 60 + 59)
   const timers = useRef([])
@@ -51,21 +53,26 @@ export default function PageRansomware() {
   useEffect(() => () => { timers.current.forEach(clearTimeout); clearInterval(tick.current) }, [])
 
   const lockedCount = locked.filter(Boolean).length
+  const filesLight  = phase === 'desktop' || phase === 'restored'
 
-  const openAttachment = () => {
-    if (phase !== 'idle') return
-    setPhase('encrypting')
-    INIT_FILES.forEach((_, i) => {
-      timers.current.push(setTimeout(() => {
-        setLocked(prev => { const n = [...prev]; n[i] = true; return n })
-        if (i === INIT_FILES.length - 1) {
-          timers.current.push(setTimeout(() => {
-            setPhase('ransom')
-            tick.current = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 0)), 1000)
-          }, 500))
-        }
-      }, 450 * (i + 1)))
-    })
+  // Download + open the attachment → land on the desktop, then encrypt slowly.
+  const downloadFile = () => {
+    if (phase !== 'email') return
+    setPhase('desktop')                         // switch to the desktop, files still intact
+    timers.current.push(setTimeout(() => {
+      setPhase('encrypting')                    // then the malware starts locking files one by one
+      INIT_FILES.forEach((_, i) => {
+        timers.current.push(setTimeout(() => {
+          setLocked(prev => { const n = [...prev]; n[i] = true; return n })
+          if (i === INIT_FILES.length - 1) {
+            timers.current.push(setTimeout(() => {
+              setPhase('ransom')
+              tick.current = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 0)), 1000)
+            }, 600))
+          }
+        }, 500 * (i + 1)))
+      })
+    }, 900))
   }
 
   const respond = (which) => {
@@ -76,7 +83,7 @@ export default function PageRansomware() {
 
   const restart = () => {
     timers.current.forEach(clearTimeout); timers.current = []; clearInterval(tick.current)
-    setPhase('idle'); setLocked(INIT_FILES.map(() => false)); setSecs(71 * 3600 + 59 * 60 + 59)
+    setPhase('email'); setLocked(INIT_FILES.map(() => false)); setSecs(71 * 3600 + 59 * 60 + 59)
   }
 
   const OUTCOME = {
@@ -92,38 +99,66 @@ export default function PageRansomware() {
         <h1 className="text-2xl font-black text-slate-800 mt-2 mb-1">🔒 {ar ? 'محاكاة برامج الفدية' : 'Ransomware Simulation'}</h1>
       </div>
 
-      {/* Desktop with files */}
-      <div className="rounded-2xl border-2 border-slate-200 overflow-hidden shadow-sm" style={{ background: phase === 'idle' || phase === 'restored' ? '#eef2f7' : '#1a0d0d' }}>
-        <div className="px-4 py-2 flex items-center justify-between" style={{ background: phase === 'idle' || phase === 'restored' ? '#0E1F39' : '#7f1d1d' }}>
-          <span className="text-white text-xs font-bold">🖥️ {ar ? 'ملفاتي' : 'My Files'}</span>
-          <span className="text-white text-xs font-mono">{lockedCount}/{INIT_FILES.length} {ar ? 'مقفل' : 'locked'}</span>
-        </div>
-        <div className="grid grid-cols-4 gap-3 p-4">
-          {INIT_FILES.map((f, i) => (
-            <div key={i} className="flex flex-col items-center text-center gap-1" style={{ transition: 'all .3s' }}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: locked[i] ? '#450a0a' : 'white', border: locked[i] ? '1px solid #b91c1c' : '1px solid #e2e8f0', transform: locked[i] ? 'scale(0.96)' : 'none' }}>
-                {locked[i] ? '🔒' : f.icon}
-              </div>
-              <span className="text-[10px] font-mono leading-tight break-all" style={{ color: locked[i] ? '#fca5a5' : '#64748b' }}>
-                {locked[i] ? ((ar ? f.name : f.en) + '.locked') : (ar ? f.name : f.en)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Stage controls */}
-      {phase === 'idle' && (
-        <div className="mt-4 bg-white rounded-2xl border-2 border-amber-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl flex-shrink-0">✉️</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-slate-800">{ar ? 'وصلك بريد: «فاتورتك المستحقة»' : 'New email: "Your unpaid invoice"'}</div>
-              <div className="text-xs text-slate-500 font-mono truncate" dir="ltr">📎 Invoice_Aug2026.pdf.exe</div>
-            </div>
-            <button onClick={openAttachment} className="px-4 py-2 rounded-xl text-sm font-black text-white flex-shrink-0" style={{ background: '#dc2626' }}>{ar ? 'افتح المرفق' : 'Open attachment'}</button>
+      {/* ── Phase 1: EMAIL inbox — the victim receives a message with an attachment ── */}
+      {phase === 'email' && (
+        <div className="rounded-2xl border-2 border-slate-200 overflow-hidden shadow-sm bg-white">
+          <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: '#0E1F39' }}>
+            <span className="text-white text-sm font-bold">📥 {ar ? 'البريد الوارد' : 'Inbox'}</span>
+            <span className="text-white/60 text-xs">{ar ? 'رسالة واحدة غير مقروءة' : '1 unread'}</span>
           </div>
-          <p className="text-xs text-slate-400 mt-2">{ar ? '💡 لاحظ الامتداد المزدوج ‎.pdf.exe‎ — هذا فخّ. افتحه (بأمان) لترى العاقبة.' : '💡 Notice the double extension .pdf.exe — it’s a trap. Open it (safely) to see the consequence.'}</p>
+
+          <div className="p-5">
+            {/* sender row */}
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black flex-shrink-0">HR</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-slate-800">{ar ? 'قسم الموارد البشرية' : 'HR Department'}</div>
+                <div className="text-xs text-slate-500 font-mono truncate" dir="ltr">hr@company-qa.com</div>
+              </div>
+              <div className="text-[11px] text-slate-400 flex-shrink-0">{ar ? 'الآن' : 'now'}</div>
+            </div>
+
+            {/* subject + body */}
+            <h2 className="text-base font-black text-slate-800 mt-3">{ar ? '📎 ملف مهم — يرجى مراجعته فوراً' : '📎 Important file — please review immediately'}</h2>
+            <p className="text-sm text-slate-600 leading-relaxed mt-2" style={{ whiteSpace: 'pre-line' }}>
+              {ar ? 'مرحباً،\nمرفق مستند مهم يخص حسابك ويتطلب مراجعتك العاجلة. يرجى تنزيل الملف وفتحه اليوم قبل انتهاء المهلة.\nمع التحية.'
+                  : 'Hello,\nAttached is an important document about your account that needs your urgent review. Please download and open the file today before the deadline.\nRegards.'}
+            </p>
+
+            {/* attachment */}
+            <div className="mt-4 flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-xl flex-shrink-0">📄</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-slate-800 truncate" dir="ltr">التقرير_المهم.pdf.exe</div>
+                <div className="text-xs text-slate-400">248 KB</div>
+              </div>
+              <button onClick={downloadFile} className="px-4 py-2 rounded-xl text-sm font-black text-white flex-shrink-0" style={{ background: '#dc2626' }}>⬇️ {ar ? 'تنزيل' : 'Download'}</button>
+            </div>
+
+            <p className="text-xs text-slate-400 mt-3">{ar ? '💡 لاحظ الامتداد المزدوج ‎.pdf.exe‎ — يبدو ملف PDF لكنه في الحقيقة برنامج تنفيذي. هذا فخّ (نزّله بأمان لترى العاقبة).' : '💡 Notice the double extension .pdf.exe — it looks like a PDF but is really an executable. It’s a trap (download it safely to see the consequence).'}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop with files — appears once the attachment is opened ── */}
+      {phase !== 'email' && (
+        <div className="rounded-2xl border-2 border-slate-200 overflow-hidden shadow-sm" style={{ background: filesLight ? '#eef2f7' : '#1a0d0d' }}>
+          <div className="px-4 py-2 flex items-center justify-between" style={{ background: filesLight ? '#0E1F39' : '#7f1d1d' }}>
+            <span className="text-white text-xs font-bold">🖥️ {ar ? 'سطح المكتب — ملفاتي' : 'Desktop — My Files'}</span>
+            <span className="text-white text-xs font-mono">{lockedCount}/{INIT_FILES.length} {ar ? 'مقفل' : 'locked'}</span>
+          </div>
+          <div className="grid grid-cols-4 gap-3 p-4">
+            {INIT_FILES.map((f, i) => (
+              <div key={i} className="flex flex-col items-center text-center gap-1" style={{ transition: 'all .3s' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: locked[i] ? '#450a0a' : 'white', border: locked[i] ? '1px solid #b91c1c' : '1px solid #e2e8f0', transform: locked[i] ? 'scale(0.96)' : 'none' }}>
+                  {locked[i] ? '🔒' : f.icon}
+                </div>
+                <span className="text-[10px] font-mono leading-tight break-all" style={{ color: locked[i] ? '#fca5a5' : '#64748b' }}>
+                  {locked[i] ? ((ar ? f.name : f.en) + '.locked') : (ar ? f.name : f.en)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -136,26 +171,44 @@ export default function PageRansomware() {
 
       {/* Ransom note */}
       {phase === 'ransom' && (
-        <div className="mt-4 rounded-2xl border-2 border-red-600 bg-black p-6 text-center" style={{ boxShadow: '0 0 0 3px rgba(220,38,38,0.25)' }}>
-          <div className="text-5xl mb-2">☠️</div>
-          <h2 className="text-xl font-black text-red-500">{ar ? 'ملفاتك مشفّرة!' : 'YOUR FILES ARE ENCRYPTED!'}</h2>
-          <p className="text-slate-300 text-sm mt-2 leading-relaxed max-w-md mx-auto">
-            {ar ? 'كل مستنداتك وصورك مقفلة بتشفير قوي. لاستعادتها، ادفع ٠.٠٥ بيتكوين خلال المهلة، وإلا ستُحذف نهائياً.'
-                : 'All your documents and photos are locked with strong encryption. To recover them, pay 0.05 BTC before the timer ends, or they will be deleted forever.'}
-          </p>
-          <div className="mt-3 inline-block bg-red-950 border border-red-700 rounded-xl px-5 py-2">
-            <div className="text-[10px] text-red-400 font-bold">{ar ? 'الوقت المتبقّي' : 'TIME LEFT'}</div>
-            <div className="text-2xl font-mono font-black text-red-400 tracking-widest">{fmtTime(secs)}</div>
+        <>
+          <div className="mt-4 rounded-2xl border-2 border-red-600 bg-black p-6 text-center" style={{ boxShadow: '0 0 0 3px rgba(220,38,38,0.25)' }}>
+            <div className="text-5xl mb-2">☠️</div>
+            <h2 className="text-xl font-black text-red-500">{ar ? 'ملفاتك مشفّرة!' : 'YOUR FILES ARE ENCRYPTED!'}</h2>
+            <p className="text-slate-300 text-sm mt-2 leading-relaxed max-w-md mx-auto">
+              {ar ? 'كل مستنداتك وصورك مقفلة بتشفير قوي. لاستعادتها، ادفع ٠.٠٥ بيتكوين خلال المهلة، وإلا ستُحذف نهائياً.'
+                  : 'All your documents and photos are locked with strong encryption. To recover them, pay 0.05 BTC before the timer ends, or they will be deleted forever.'}
+            </p>
+            <div className="mt-3 inline-block bg-red-950 border border-red-700 rounded-xl px-5 py-2">
+              <div className="text-[10px] text-red-400 font-bold">{ar ? 'الوقت المتبقّي' : 'TIME LEFT'}</div>
+              <div className="text-2xl font-mono font-black text-red-400 tracking-widest">{fmtTime(secs)}</div>
+            </div>
+            <div className="mt-3 text-xs font-mono text-slate-500 break-all" dir="ltr">BTC: 1A2b3C4d5E6f7G8h9I0jK1l2M3n4O5p6Q7</div>
           </div>
-          <div className="mt-3 text-xs font-mono text-slate-500 break-all" dir="ltr">BTC: 1A2b3C4d5E6f7G8h9I0jK1l2M3n4O5p6Q7</div>
 
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button onClick={() => respond('paid')} className="py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#7f1d1d' }}>💸 {ar ? 'ادفع الفدية' : 'Pay the ransom'}</button>
-            <button onClick={() => respond('restored')} className="py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#166534' }}>💾 {ar ? 'افصل الشبكة واستعد نسخة احتياطية' : 'Disconnect + restore backup'}</button>
-            <button onClick={() => respond('rebooted')} className="py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#334155' }}>🔌 {ar ? 'أعد تشغيل الجهاز فقط' : 'Just reboot'}</button>
+          {/* Multiple-choice question — separated from the ransom note */}
+          <div className="mt-4 bg-white rounded-2xl border-2 border-slate-200 p-5">
+            <h3 className="text-base font-black text-slate-800 mb-1">❓ {ar ? 'ما ردّك الصحيح على هذا الهجوم؟' : 'What is your correct response to this attack?'}</h3>
+            <p className="text-xs text-slate-500 mb-4">{ar ? 'اختر إجابة واحدة:' : 'Choose one answer:'}</p>
+            <div className="space-y-2.5">
+              {[
+                { key: 'paid',     letter: ar ? 'أ' : 'A', emoji: '💸', label: ar ? 'ادفع الفدية' : 'Pay the ransom' },
+                { key: 'restored', letter: ar ? 'ب' : 'B', emoji: '💾', label: ar ? 'افصل الشبكة واستعد نسخة احتياطية' : 'Disconnect + restore backup' },
+                { key: 'rebooted', letter: ar ? 'ج' : 'C', emoji: '🔌', label: ar ? 'أعد تشغيل الجهاز فقط' : 'Just reboot' },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => respond(opt.key)}
+                  className="w-full flex items-center gap-3 text-start p-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 hover:border-red-400 hover:bg-red-50 transition-all"
+                >
+                  <span className="w-7 h-7 rounded-full bg-slate-800 text-white text-sm font-black flex items-center justify-center flex-shrink-0">{opt.letter}</span>
+                  <span className="text-xl flex-shrink-0">{opt.emoji}</span>
+                  <span className="text-sm font-bold text-slate-800">{opt.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="text-[11px] text-slate-500 mt-3">{ar ? 'ما هو ردّك؟ اختر بحكمة.' : 'What is your response? Choose wisely.'}</p>
-        </div>
+        </>
       )}
 
       {/* Outcome */}
@@ -186,8 +239,8 @@ export default function PageRansomware() {
       {/* explanation — collapsed by default, sits under the practical part */}
       <Explanation>
         <p className="text-slate-500 text-sm leading-relaxed">
-          {ar ? 'برنامج الفدية يشفّر كل ملفاتك ويطلب مالاً لفكّها. جرّب السيناريو بأمان: افتح المرفق المشبوه وشاهد ماذا يحدث — ثم اختر ردّك الصحيح.'
-              : 'Ransomware encrypts all your files and demands money to unlock them. Try the scenario safely: open the suspicious attachment, watch what happens — then choose your response.'}
+          {ar ? 'برنامج الفدية يشفّر كل ملفاتك ويطلب مالاً لفكّها. جرّب السيناريو بأمان: نزّل المرفق من البريد، شاهد ملفاتك تُقفَل على سطح المكتب واحداً تلو الآخر — ثم أجب عن السؤال باختيار ردّك الصحيح.'
+              : 'Ransomware encrypts all your files and demands money to unlock them. Try the scenario safely: download the email attachment, watch your desktop files lock one by one — then answer the question by choosing your correct response.'}
         </p>
       </Explanation>
     </div>
