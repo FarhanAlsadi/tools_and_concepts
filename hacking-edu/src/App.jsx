@@ -22,6 +22,8 @@ import PageLxFs from './pages/PageLxFs'
 import PageLxGobuster from './pages/PageLxGobuster'
 import PageLxHydra from './pages/PageLxHydra'
 import PageLxChallenge from './pages/PageLxChallenge'
+import PageTesting from './pages/PageTesting'
+import PageRansomwareGame from './pages/PageRansomwareGame'
 
 export default function App() {
   return (
@@ -43,6 +45,9 @@ export default function App() {
         <Route path="/lx-gobuster" element={<PageLxGobuster />} />
         <Route path="/lx-hydra" element={<PageLxHydra />} />
         <Route path="/lx-challenge" element={<PageLxChallenge />} />
+        {/* ── Hidden testing area (not shown on the main lessons page) ── */}
+        <Route path="/testing" element={<PageTesting />} />
+        <Route path="/testing/ransomware" element={<PageRansomwareGame />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>

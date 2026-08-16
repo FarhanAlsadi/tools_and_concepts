@@ -16,6 +16,8 @@ const PAGE_TITLES = {
   '/lx-gobuster':{ ar: 'لينكس — Gobuster',       en: 'Linux — Gobuster' },
   '/lx-hydra':   { ar: 'لينكس — Hydra',          en: 'Linux — Hydra' },
   '/lx-challenge':{ ar: 'لينكس — التحدي',        en: 'Linux — Challenge' },
+  '/testing':    { ar: 'منطقة الاختبار',          en: 'Testing Area' },
+  '/testing/ransomware': { ar: 'مهمّة: أوقف الفدية', en: 'Mission: Stop the Ransomware' },
 }
 
 export default function Navbar() {
