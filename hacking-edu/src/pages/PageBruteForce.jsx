@@ -7,11 +7,6 @@ import Explanation from '../components/Explanation'
 
 const HOST = 'zaad-store.com'
 
-// known accounts on the store — FIXED short passwords (3 characters each), so a
-// student must brute-force at least 3 characters. Unknown usernames also get a
-// fixed 3-char password, so every username succeeds (with enough -n).
-const CREDS = { admin: 'f0r', sara: 's2a', omar: 'q1z', huda: 'h9d' }
-
 const PRODUCTS = [
   { ar:'هاتف Galaxy S24',   en:'Galaxy S24',      price:3299, emoji:'📱', bg:'linear-gradient(135deg,#6366f1,#8b5cf6)', tagAr:'الأكثر مبيعاً', tagEn:'Best seller' },
   { ar:'حاسوب MacBook Air', en:'MacBook Air',     price:4599, emoji:'💻', bg:'linear-gradient(135deg,#0ea5e9,#2563eb)' },
@@ -31,9 +26,13 @@ const ALPHA = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#@!
 const B = ALPHA.length
 const candFromIndex = (idx, L) => { let s = ''; for (let k = L - 1; k >= 0; k--) s += ALPHA[Math.floor(idx / Math.pow(B, k)) % B]; return s }
 const indexOfCand = c => { let i = 0; for (const ch of c) i = i * B + ALPHA.indexOf(ch); return i }
-const genPass = user => { let seed = [...user].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 5381); let s = ''; for (let i = 0; i < 3; i++) { seed = (seed * 1103515245 + 12345) >>> 0; s += ALPHA[seed % B] } return s }
+// deterministic pseudo-random password of length L for a username
+const passFor = (user, L) => { let seed = [...user].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 5381); let s = ''; for (let i = 0; i < L; i++) { seed = (seed * 1103515245 + 12345) >>> 0; s += ALPHA[seed % B] } return s }
+// password length = the number in the command, capped at 4 so the search stays
+// watchable — and always ≤ N, so it is always found within 1..N
+const passLen = maxLen => Math.max(1, Math.min(4, maxLen))
 
-export function runCracker(ctx, { creds, speed = 'medium', onStart, onProgress, onCrack, onFail }) {
+export function runCracker(ctx, { speed = 'medium', onStart, onProgress, onCrack, onFail }) {
   const { argv, print, printAll, schedule, setBusy } = ctx
   // positional syntax:  cracker <username> <number_of_digits> <website>
   const parts  = argv.slice(1).filter(a => !a.startsWith('-'))
@@ -44,7 +43,7 @@ export function runCracker(ctx, { creds, speed = 'medium', onStart, onProgress, 
 
   if (!user) { printAll([{ k:'err', v:'cracker: username required' }, { k:'dim', v:'usage: cracker <username> <number_of_digits> <website>' }]); return }
 
-  const pass = creds[user] || genPass(user)
+  const pass = passFor(user, passLen(maxLen))   // length grows with N (capped at 4), always ≤ N
   setBusy(true)
   onStart && onStart({ user, host, maxLen })
   printAll([
@@ -65,16 +64,20 @@ export function runCracker(ctx, { creds, speed = 'medium', onStart, onProgress, 
     if (pass.length === L) { const t = indexOfCand(pass); plan.push({ L, countL, last: t, foundIdx: t }); break }
     plan.push({ L, countL, last: countL - 1, foundIdx: -1 })
   }
+  // total candidates until (and including) the found one — used to size batches
+  let total = 0
+  for (const seg of plan) total += (seg.foundIdx >= 0 ? seg.foundIdx + 1 : seg.countL)
 
-  // speed profiles — how fast attempts stream (slow lets you read each one)
+  // speed profiles — how fast attempts stream. `frames` bounds total run time:
+  // batches grow so any search finishes in ~frames frames (with `batch` as the
+  // floor for short searches). `readable` tries are shown one-by-one first.
   const SPEEDS = {
-    slow:   { readable: 40, readableDelay: 95, batch: 10,  batchDelay: 60 },
-    medium: { readable: 30, readableDelay: 55, batch: 75,  batchDelay: 16 },
-    fast:   { readable: 10, readableDelay: 20, batch: 600, batchDelay: 5 },
+    slow:   { readable: 35, readableDelay: 90, batch: 30,  batchDelay: 50, frames: 450 },
+    medium: { readable: 25, readableDelay: 55, batch: 80,  batchDelay: 16, frames: 220 },
+    fast:   { readable: 10, readableDelay: 20, batch: 400, batchDelay: 6,  frames: 90 },
   }
   const S = SPEEDS[speed] || SPEEDS.medium
   const READABLE = S.readable   // first N tries shown one-by-one so the order is clear
-  const BATCH = S.batch         // then this many per frame — EVERY one is still shown
   let li = 0, idx = 0, counter = 0, header = false
 
   const tick = () => {
@@ -90,7 +93,8 @@ export function runCracker(ctx, { creds, speed = 'medium', onStart, onProgress, 
     if (!header) { print({ k:'info', v:`[*] trying ${seg.L}-character passwords  (${seg.countL.toLocaleString()} combinations)` }); header = true }
 
     const readablePhase = counter < READABLE
-    const size = readablePhase ? 1 : BATCH
+    const size = readablePhase ? 1 : Math.max(S.batch, Math.ceil(total / S.frames))
+    const step = Math.max(1, Math.floor(size / 40))   // count every candidate, draw ≤ ~40 lines/frame
     const batch = []
     let lastCand = '', found = false
     for (let n = 0; n < size && idx <= seg.last; n++, idx++) {
@@ -100,7 +104,7 @@ export function runCracker(ctx, { creds, speed = 'medium', onStart, onProgress, 
         batch.push({ k:'ok', v:`[✓] ${String(counter).padStart(7)}   FOUND    ${user} : ${lastCand}` })
         found = true; idx++; break
       }
-      batch.push({ k:'dim', v:`[⚡] ${String(counter).padStart(7)}   trying   ${user} : ${lastCand}` })
+      if (n % step === 0) batch.push({ k:'dim', v:`[⚡] ${String(counter).padStart(7)}   trying   ${user} : ${lastCand}` })
     }
     printAll(batch)
     onProgress && onProgress({ user, pass: lastCand, n: counter })
@@ -138,6 +142,7 @@ export default function PageBruteForce() {
   const [speed, setSpeed] = useState('medium')   // cracker streaming speed: slow | medium | fast
   const speedRef = useRef(speed)
   speedRef.current = speed                        // keep the latest speed for the terminal command
+  const [lastN, setLastN] = useState(3)           // last "number of characters" run, for manual-login checks
 
   const go = p => {
     let c = (p || '/').trim().replace(/^https?:\/\//i, '').replace(new RegExp('^' + HOST.replace(/\./g, '\\.'), 'i'), '').toLowerCase()
@@ -147,9 +152,8 @@ export default function PageBruteForce() {
   }
 
   const cracker = ctx => runCracker(ctx, {
-    creds: CREDS,
     speed: speedRef.current,
-    onStart: () => { setCracked(null); setFailed(false); setAtk({ user: '', pass: '', n: 0 }); setPage('/login'); setAddr(HOST + '/login') },
+    onStart: ({ maxLen }) => { setLastN(maxLen); setCracked(null); setFailed(false); setAtk({ user: '', pass: '', n: 0 }); setPage('/login'); setAddr(HOST + '/login') },
     onProgress: setAtk,
     onCrack: setCracked,
     onFail: () => setFailed(true),
@@ -159,7 +163,7 @@ export default function PageBruteForce() {
   const tryLogin = () => {
     const u = mUser.trim()
     if (!u || !mPass) return
-    const correct = CREDS[u] || genPass(u)
+    const correct = passFor(u, Math.max(1, Math.min(4, lastN)))
     if (mPass === correct) { setLoginErr(false); setFailed(false); setAtk(null); setCracked({ user: u, pass: mPass }) }
     else { setLoginErr(true) }
   }
@@ -358,7 +362,7 @@ export default function PageBruteForce() {
 
       {/* command explainer */}
       <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:12 }}>
-        {[['admin', isAr ? 'اسم المستخدم' : 'the username'], ['3', isAr ? 'عدد الأحرف المطلوب تجربتها' : 'number of characters'], [HOST, isAr ? 'الموقع الهدف' : 'the target website']].map(([c, d]) => (
+        {[['admin', isAr ? 'اسم المستخدم' : 'the username'], ['4', isAr ? 'عدد أحرف كلمة المرور (١–٤)' : 'password length (1–4)'], [HOST, isAr ? 'الموقع الهدف' : 'the target website']].map(([c, d]) => (
           <div key={c} style={{ background:'white', border:'2px solid #e2e8f0', borderRadius:9, padding:'6px 10px' }}>
             <code style={{ fontFamily:'monospace', fontSize:11, fontWeight:800, color:'#b91c1c' }}>{c}</code>
             <div style={{ fontSize:10, color:'#64748b' }}>{d}</div>
@@ -367,8 +371,8 @@ export default function PageBruteForce() {
       </div>
       <div style={{ background:'#0b1020', borderRadius:10, padding:'10px 14px', marginBottom:14, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }} dir="ltr">
         <span style={{ color:'#4ade80', fontFamily:'monospace', fontSize:12, fontWeight:700 }}>$</span>
-        <code style={{ flex:1, fontFamily:'monospace', fontSize:12.5, color:'#a5f3fc', minWidth:200 }}>cracker admin 3 {HOST}</code>
-        <button onClick={() => navigator.clipboard && navigator.clipboard.writeText(`cracker admin 3 ${HOST}`)} style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:6, color:'#94a3b8', cursor:'pointer', fontSize:11, padding:'3px 10px' }}>{isAr ? '⧉ نسخ' : '⧉ copy'}</button>
+        <code style={{ flex:1, fontFamily:'monospace', fontSize:12.5, color:'#a5f3fc', minWidth:200 }}>cracker admin 4 {HOST}</code>
+        <button onClick={() => navigator.clipboard && navigator.clipboard.writeText(`cracker admin 4 ${HOST}`)} style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:6, color:'#94a3b8', cursor:'pointer', fontSize:11, padding:'3px 10px' }}>{isAr ? '⧉ نسخ' : '⧉ copy'}</button>
       </div>
 
       {/* speed selector */}
@@ -412,8 +416,8 @@ export default function PageBruteForce() {
       <Explanation>
         <p style={{ fontSize:13, color:'#64748b', margin:0, lineHeight:1.7 }}>
           {isAr
-            ? `أداة cracker تجرّب كل الاحتمالات الممكنة بالترتيب: أولاً كل الحروف المفردة (0-9 ثم a-z ثم A-Z ثم الرموز)، ثم كل التركيبات الممكنة من حرفين، ثم من ثلاثة أحرف... الأمر: cracker اسم_المستخدم عدد_الأحرف الموقع. كلمة المرور ثابتة وطولها ٣ أحرف — فإن جرّبت حرفين فقط فلن يجدها! شاهد المحاولات واحدةً تلو الأخرى على اليمين.`
-            : `cracker tries every possibility in order: first every single character (0-9, then a-z, then A-Z, then symbols), then every 2-character combination, then every 3-character… The command is: cracker <username> <number_of_digits> <website>. The password is a fixed 3 characters — so if you try only 2, it won't be found! Watch the attempts one by one on the right.`}
+            ? `أداة cracker تجرّب كل الاحتمالات الممكنة بالترتيب: أولاً كل الحروف المفردة (0-9 ثم a-z ثم A-Z ثم الرموز)، ثم كل التركيبات من حرفين، ثم ثلاثة، حتى العدد الذي تحدّده في الأمر (١ إلى ٤). الأمر: cracker اسم_المستخدم عدد_الأحرف الموقع. طول كلمة المرور يساوي هذا العدد — فتظهر دائماً ضمن المدى، وكلّما زاد العدد أصبح البحث أطول وأصعب. اختر السرعة وشاهد المحاولات على اليمين.`
+            : `cracker tries every possibility in order: first every single character (0-9, then a-z, then A-Z, then symbols), then every 2-character combination, then 3, up to the number you set in the command (1 to 4). The command is: cracker <username> <number_of_digits> <website>. The password's length equals that number — so it always appears within the range, and the bigger the number the longer and harder the search. Pick a speed and watch the attempts on the right.`}
         </p>
       </Explanation>
 
