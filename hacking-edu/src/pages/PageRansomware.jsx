@@ -6,11 +6,11 @@ import Explanation from '../components/Explanation'
 
 /* ────────────────────────────────────────────────────────────────────────────
    RANSOMWARE SIMULATION (safe, in-page only)
-   Flow: the student sees an EMAIL inbox with a booby-trapped attachment. When
-   they download it, the view switches to their DESKTOP and the "files" get
-   locked one by one. A ransom note with a countdown appears, and then a
-   multiple-choice question asks for their response — teaching that BACKUPS (not
-   paying) are the real defense.
+   Flow: the student opens a Gmail-style inbox (navigable folders: Inbox, Spam,
+   …), reads a booby-trapped email and downloads its attachment. The view then
+   switches to their DESKTOP and the "files" get locked one by one. A ransom note
+   with a countdown appears, followed by a multiple-choice question asking for
+   their response — teaching that BACKUPS (not paying) are the real defense.
    ──────────────────────────────────────────────────────────────────────────── */
 
 const INIT_FILES = [
@@ -32,6 +32,58 @@ const PREVENT = [
   { icon: '🛡️', ar: 'استخدم برنامج حماية محدّثاً يكشف سلوك التشفير المفاجئ.', en: 'Use up-to-date protection that detects sudden encryption behavior.' },
 ]
 
+// Gmail-style folders (shown on the right in RTL).
+const FOLDERS = [
+  { key: 'inbox',   ar: 'الوارد',              en: 'Inbox',   icon: '📥' },
+  { key: 'starred', ar: 'المميّزة بنجمة',       en: 'Starred', icon: '⭐' },
+  { key: 'snoozed', ar: 'المؤجّلة',             en: 'Snoozed', icon: '⏰' },
+  { key: 'sent',    ar: 'المُرسَلة',            en: 'Sent',    icon: '📤' },
+  { key: 'drafts',  ar: 'المسودّات',            en: 'Drafts',  icon: '📄' },
+  { key: 'spam',    ar: 'المزعجة (سبام)',        en: 'Spam',    icon: '⚠️' },
+  { key: 'trash',   ar: 'المهملات',             en: 'Trash',   icon: '🗑️' },
+]
+
+// Mailboxes. The booby-trapped email lives in the Inbox.
+const MAIL = {
+  inbox: [
+    {
+      id: 'phish', danger: true, unread: true, initials: 'HR', avatarBg: '#1a73e8',
+      from: 'قسم الموارد البشرية', fromEn: 'HR Department', addr: 'hr@company-qa.com', time: 'الآن', timeEn: 'now',
+      subj: 'ملف مهم — يرجى مراجعته فوراً', subjEn: 'Important file — please review immediately',
+      preview: 'مرفق مستند مهم يخص حسابك ويتطلب مراجعتك العاجلة قبل انتهاء المهلة.',
+      previewEn: 'Attached is an important document about your account that needs your urgent review.',
+      body: 'مرحباً،\nمرفق مستند مهم يخص حسابك ويتطلب مراجعتك العاجلة. يرجى تنزيل الملف وفتحه اليوم قبل انتهاء المهلة.\n\nمع التحية،\nقسم الموارد البشرية',
+      bodyEn: 'Hello,\nAttached is an important document about your account that needs your urgent review. Please download and open the file today before the deadline.\n\nRegards,\nHR Department',
+      attachment: { name: 'التقرير_المهم.pdf.exe', size: '248 KB' },
+    },
+    {
+      id: 'i2', unread: true, initials: 'ن', avatarBg: '#34a853',
+      from: 'نادي اللياقة', fromEn: 'Fitness Club', addr: 'no-reply@fitclub.qa', time: '9:41', timeEn: '9:41',
+      subj: 'تذكير: تجديد اشتراكك', subjEn: 'Reminder: renew your subscription',
+      preview: 'يُجدَّد اشتراكك الشهري بعد ٣ أيام — لا حاجة لأي إجراء.',
+      previewEn: 'Your monthly subscription renews in 3 days — no action needed.',
+      body: 'يُجدَّد اشتراكك الشهري بعد ٣ أيام. لا حاجة لأي إجراء من طرفك.', bodyEn: 'Your monthly subscription renews in 3 days. No action needed on your part.',
+    },
+    {
+      id: 'i3', initials: 'G', avatarBg: '#ea4335',
+      from: 'Google', fromEn: 'Google', addr: 'no-reply@accounts.google.com', time: 'أمس', timeEn: 'Yesterday',
+      subj: 'تنبيه أمان', subjEn: 'Security alert',
+      preview: 'تم تسجيل الدخول إلى حسابك من جهاز جديد.', previewEn: 'A new sign-in to your account.',
+      body: 'تم تسجيل الدخول إلى حسابك من جهاز جديد. إذا كان هذا أنت فتجاهل هذه الرسالة.', bodyEn: 'A new sign-in to your account. If this was you, you can ignore this message.',
+    },
+  ],
+  spam: [
+    {
+      id: 'sp1', initials: '🎁', avatarBg: '#f59e0b',
+      from: 'سحب الجوائز', fromEn: 'Prize Draw', addr: 'winner@lucky-draw.info', time: 'أمس', timeEn: 'Yesterday',
+      subj: '🎉 مبروك! لقد ربحت ١٬٠٠٠٬٠٠٠ ريال', subjEn: '🎉 Congrats! You won 1,000,000',
+      preview: 'اضغط لاستلام جائزتك الآن قبل فوات الأوان!', previewEn: 'Click to claim your prize now!',
+      body: 'لقد تم اختيارك للفوز بالجائزة الكبرى! أرسل بياناتك البنكية لاستلام المبلغ فوراً.', bodyEn: 'You have been selected for the grand prize! Send your bank details to claim it now.',
+    },
+  ],
+  starred: [], snoozed: [], sent: [], drafts: [], trash: [],
+}
+
 const fmtTime = s => {
   const h = String(Math.floor(s / 3600)).padStart(2, '0')
   const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
@@ -45,6 +97,8 @@ export default function PageRansomware() {
   const ar = lang === 'ar'
 
   const [phase, setPhase]     = useState('email')  // email | desktop | encrypting | ransom | paid | restored | rebooted
+  const [folder, setFolder]   = useState('inbox')  // active Gmail folder
+  const [openMail, setOpenMail] = useState(null)   // id of the opened email (null = list view)
   const [locked, setLocked]   = useState(() => INIT_FILES.map(() => false))
   const [secs, setSecs]       = useState(71 * 3600 + 59 * 60 + 59)
   const timers = useRef([])
@@ -54,6 +108,10 @@ export default function PageRansomware() {
 
   const lockedCount = locked.filter(Boolean).length
   const filesLight  = phase === 'desktop' || phase === 'restored'
+  const num         = n => (ar ? Number(n).toLocaleString('ar-EG') : String(n))
+  const mailList    = MAIL[folder] || []
+  const openObj     = openMail ? mailList.find(m => m.id === openMail) : null
+  const inboxUnread = MAIL.inbox.filter(m => m.unread).length
 
   // Download + open the attachment → land on the desktop, then encrypt slowly.
   const downloadFile = () => {
@@ -83,7 +141,8 @@ export default function PageRansomware() {
 
   const restart = () => {
     timers.current.forEach(clearTimeout); timers.current = []; clearInterval(tick.current)
-    setPhase('email'); setLocked(INIT_FILES.map(() => false)); setSecs(71 * 3600 + 59 * 60 + 59)
+    setPhase('email'); setFolder('inbox'); setOpenMail(null)
+    setLocked(INIT_FILES.map(() => false)); setSecs(71 * 3600 + 59 * 60 + 59)
   }
 
   const OUTCOME = {
@@ -99,43 +158,110 @@ export default function PageRansomware() {
         <h1 className="text-2xl font-black text-slate-800 mt-2 mb-1">🔒 {ar ? 'محاكاة برامج الفدية' : 'Ransomware Simulation'}</h1>
       </div>
 
-      {/* ── Phase 1: EMAIL inbox — the victim receives a message with an attachment ── */}
+      {/* ── Phase 1: Gmail-style inbox ────────────────────────────────── */}
       {phase === 'email' && (
         <div className="rounded-2xl border-2 border-slate-200 overflow-hidden shadow-sm bg-white">
-          <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: '#0E1F39' }}>
-            <span className="text-white text-sm font-bold">📥 {ar ? 'البريد الوارد' : 'Inbox'}</span>
-            <span className="text-white/60 text-xs">{ar ? 'رسالة واحدة غير مقروءة' : '1 unread'}</span>
+          {/* top bar */}
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-200">
+            <span className="text-slate-500 text-lg">☰</span>
+            <span className="flex items-center gap-1.5 font-bold text-slate-700 text-lg">
+              <span style={{ color: '#EA4335' }}>✉️</span><span className="hidden sm:inline">{ar ? 'البريد' : 'Mail'}</span>
+            </span>
+            <div className="flex-1 mx-1">
+              <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-slate-400 text-sm" style={{ background: '#eaf1fb' }}>🔍 <span className="truncate">{ar ? 'ابحث في البريد' : 'Search mail'}</span></div>
+            </div>
+            <span className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: '#1a73e8' }}>{ar ? 'أ' : 'A'}</span>
           </div>
 
-          <div className="p-5">
-            {/* sender row */}
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black flex-shrink-0">HR</div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-slate-800">{ar ? 'قسم الموارد البشرية' : 'HR Department'}</div>
-                <div className="text-xs text-slate-500 font-mono truncate" dir="ltr">hr@company-qa.com</div>
+          <div className="flex" style={{ minHeight: 400 }}>
+            {/* sidebar — first child so it sits on the RIGHT in RTL */}
+            <div className="w-36 sm:w-44 flex-shrink-0 py-3 px-2">
+              <button className="flex items-center gap-2 px-4 py-2.5 mb-3 rounded-2xl shadow-sm font-bold text-sm text-slate-700" style={{ background: '#c2e7ff' }}>
+                <span className="text-lg">✏️</span>{ar ? 'إنشاء' : 'Compose'}
+              </button>
+              <div className="space-y-0.5">
+                {FOLDERS.map(f => {
+                  const active = folder === f.key
+                  const count = (MAIL[f.key] || []).filter(m => m.unread).length
+                  return (
+                    <button
+                      key={f.key}
+                      onClick={() => { setFolder(f.key); setOpenMail(null) }}
+                      className={`w-full flex items-center gap-3 px-4 py-1.5 rounded-full text-sm text-start transition-colors ${active ? 'font-bold' : 'text-slate-700 hover:bg-slate-100'}`}
+                      style={active ? { background: '#fde3e1', color: '#c5221f' } : undefined}
+                    >
+                      <span className="text-base flex-shrink-0">{f.icon}</span>
+                      <span className="flex-1 truncate">{ar ? f.ar : f.en}</span>
+                      {count > 0 && <span className="text-xs font-bold flex-shrink-0">{num(count)}</span>}
+                    </button>
+                  )
+                })}
               </div>
-              <div className="text-[11px] text-slate-400 flex-shrink-0">{ar ? 'الآن' : 'now'}</div>
             </div>
 
-            {/* subject + body */}
-            <h2 className="text-base font-black text-slate-800 mt-3">{ar ? '📎 ملف مهم — يرجى مراجعته فوراً' : '📎 Important file — please review immediately'}</h2>
-            <p className="text-sm text-slate-600 leading-relaxed mt-2" style={{ whiteSpace: 'pre-line' }}>
-              {ar ? 'مرحباً،\nمرفق مستند مهم يخص حسابك ويتطلب مراجعتك العاجلة. يرجى تنزيل الملف وفتحه اليوم قبل انتهاء المهلة.\nمع التحية.'
-                  : 'Hello,\nAttached is an important document about your account that needs your urgent review. Please download and open the file today before the deadline.\nRegards.'}
-            </p>
+            {/* main area — email list or opened email */}
+            <div className="flex-1 min-w-0 border-s border-slate-200 bg-white">
+              {!openObj ? (
+                mailList.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-slate-400 gap-2" style={{ minHeight: 400 }}>
+                    <span className="text-4xl">📭</span>
+                    <span className="text-sm">{ar ? 'لا توجد رسائل هنا' : 'No messages here'}</span>
+                  </div>
+                ) : (
+                  <div>
+                    {mailList.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setOpenMail(m.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 border-b border-slate-100 text-start hover:bg-slate-50 transition-colors ${m.unread ? 'bg-white' : 'bg-slate-50/60'}`}
+                      >
+                        <span className="text-slate-300 flex-shrink-0">☆</span>
+                        <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: m.avatarBg }}>{m.initials}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm truncate ${m.unread ? 'font-black text-slate-900' : 'text-slate-600'}`}>{ar ? m.from : m.fromEn}</span>
+                            {m.danger && <span className="text-[9px] px-1.5 py-0.5 rounded font-bold flex-shrink-0" style={{ background: '#fee2e2', color: '#b91c1c' }}>{ar ? 'مشبوهة' : 'suspicious'}</span>}
+                          </div>
+                          <div className={`text-xs truncate ${m.unread ? 'font-bold text-slate-700' : 'text-slate-500'}`}>
+                            {ar ? m.subj : m.subjEn} <span className="text-slate-400 font-normal">— {ar ? m.preview : m.previewEn}</span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-slate-400 flex-shrink-0">{ar ? m.time : m.timeEn}</span>
+                      </button>
+                    ))}
+                  </div>
+                )
+              ) : (
+                /* opened email */
+                <div className="p-4">
+                  <button onClick={() => setOpenMail(null)} className="text-slate-500 text-sm mb-3 flex items-center gap-1 hover:text-slate-800">↩ {ar ? 'رجوع' : 'Back'}</button>
+                  <h2 className="text-lg font-black text-slate-800">{ar ? openObj.subj : openObj.subjEn}{folder === 'spam' && ' ⚠️'}</h2>
+                  <div className="flex items-center gap-3 mt-3 pb-3 border-b border-slate-100">
+                    <div className="w-10 h-10 rounded-full text-white flex items-center justify-center font-black flex-shrink-0" style={{ background: openObj.avatarBg }}>{openObj.initials}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-bold text-slate-800">{ar ? openObj.from : openObj.fromEn}</div>
+                      <div className="text-xs text-slate-500 font-mono truncate" dir="ltr">{openObj.addr}</div>
+                    </div>
+                    <div className="text-[11px] text-slate-400 flex-shrink-0">{ar ? openObj.time : openObj.timeEn}</div>
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed mt-3" style={{ whiteSpace: 'pre-line' }}>{ar ? openObj.body : openObj.bodyEn}</p>
 
-            {/* attachment */}
-            <div className="mt-4 flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
-              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-xl flex-shrink-0">📄</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-slate-800 truncate" dir="ltr">التقرير_المهم.pdf.exe</div>
-                <div className="text-xs text-slate-400">248 KB</div>
-              </div>
-              <button onClick={downloadFile} className="px-4 py-2 rounded-xl text-sm font-black text-white flex-shrink-0" style={{ background: '#dc2626' }}>⬇️ {ar ? 'تنزيل' : 'Download'}</button>
+                  {openObj.attachment && (
+                    <>
+                      <div className="mt-4 flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-xl flex-shrink-0">📄</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-slate-800 truncate" dir="ltr">{openObj.attachment.name}</div>
+                          <div className="text-xs text-slate-400">{openObj.attachment.size}</div>
+                        </div>
+                        <button onClick={downloadFile} className="px-4 py-2 rounded-xl text-sm font-black text-white flex-shrink-0" style={{ background: '#dc2626' }}>⬇️ {ar ? 'تنزيل' : 'Download'}</button>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-3">{ar ? '💡 لاحظ الامتداد المزدوج ‎.pdf.exe‎ — يبدو ملف PDF لكنه في الحقيقة برنامج تنفيذي. هذا فخّ (نزّله بأمان لترى العاقبة).' : '💡 Notice the double extension .pdf.exe — it looks like a PDF but is really an executable. It’s a trap (download it safely to see the consequence).'}</p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-
-            <p className="text-xs text-slate-400 mt-3">{ar ? '💡 لاحظ الامتداد المزدوج ‎.pdf.exe‎ — يبدو ملف PDF لكنه في الحقيقة برنامج تنفيذي. هذا فخّ (نزّله بأمان لترى العاقبة).' : '💡 Notice the double extension .pdf.exe — it looks like a PDF but is really an executable. It’s a trap (download it safely to see the consequence).'}</p>
           </div>
         </div>
       )}
@@ -239,8 +365,8 @@ export default function PageRansomware() {
       {/* explanation — collapsed by default, sits under the practical part */}
       <Explanation>
         <p className="text-slate-500 text-sm leading-relaxed">
-          {ar ? 'برنامج الفدية يشفّر كل ملفاتك ويطلب مالاً لفكّها. جرّب السيناريو بأمان: نزّل المرفق من البريد، شاهد ملفاتك تُقفَل على سطح المكتب واحداً تلو الآخر — ثم أجب عن السؤال باختيار ردّك الصحيح.'
-              : 'Ransomware encrypts all your files and demands money to unlock them. Try the scenario safely: download the email attachment, watch your desktop files lock one by one — then answer the question by choosing your correct response.'}
+          {ar ? 'برنامج الفدية يشفّر كل ملفاتك ويطلب مالاً لفكّها. جرّب السيناريو بأمان: تصفّح البريد وافتح الرسالة المشبوهة ونزّل مرفقها، شاهد ملفاتك تُقفَل على سطح المكتب واحداً تلو الآخر — ثم أجب عن السؤال باختيار ردّك الصحيح.'
+              : 'Ransomware encrypts all your files and demands money to unlock them. Try the scenario safely: browse the inbox, open the suspicious email and download its attachment, watch your desktop files lock one by one — then answer the question by choosing your correct response.'}
         </p>
       </Explanation>
     </div>
