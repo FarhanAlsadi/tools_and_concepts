@@ -324,7 +324,6 @@ export default function PageRansomware() {
                 <div className="text-3xl font-mono font-black text-red-400 tracking-widest">{fmtTime(secs)}</div>
               </div>
               <div className="mt-4 text-xs font-mono text-slate-500 break-all max-w-xs" dir="ltr">BTC: 1A2b3C4d5E6f7G8h9I0jK1l2M3n4O5p6Q7</div>
-              <div className="mt-4 text-[11px] text-slate-400">{ar ? '↓ اختر ردّك من الأسفل' : '↓ choose your response below'}</div>
             </div>
           )}
 
