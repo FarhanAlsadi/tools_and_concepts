@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { ChevronLeft } from 'lucide-react'
@@ -33,7 +33,7 @@ const candFromIndex = (idx, L) => { let s = ''; for (let k = L - 1; k >= 0; k--)
 const indexOfCand = c => { let i = 0; for (const ch of c) i = i * B + ALPHA.indexOf(ch); return i }
 const genPass = user => { let seed = [...user].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 5381); let s = ''; for (let i = 0; i < 3; i++) { seed = (seed * 1103515245 + 12345) >>> 0; s += ALPHA[seed % B] } return s }
 
-export function runCracker(ctx, { creds, onStart, onProgress, onCrack, onFail }) {
+export function runCracker(ctx, { creds, speed = 'medium', onStart, onProgress, onCrack, onFail }) {
   const { argv, print, printAll, schedule, setBusy } = ctx
   // positional syntax:  cracker <username> <number_of_digits> <website>
   const parts  = argv.slice(1).filter(a => !a.startsWith('-'))
@@ -53,6 +53,7 @@ export function runCracker(ctx, { creds, onStart, onProgress, onCrack, onFail })
     { k:'out',  v:`[*] username   : ${user}` },
     { k:'out',  v:`[*] charset    : 0-9  a-z  A-Z  # @ ! $ % & *  (${B} symbols)` },
     { k:'out',  v:`[*] max length : ${maxLen}` },
+    { k:'out',  v:`[*] speed      : ${speed}` },
     { k:'dim',  v:'' },
   ])
 
@@ -65,8 +66,15 @@ export function runCracker(ctx, { creds, onStart, onProgress, onCrack, onFail })
     plan.push({ L, countL, last: countL - 1, foundIdx: -1 })
   }
 
-  const READABLE = 30    // first N tries shown one-by-one so the order is clear
-  const BATCH = 75       // then this many per frame — fast, but EVERY one is shown
+  // speed profiles — how fast attempts stream (slow lets you read each one)
+  const SPEEDS = {
+    slow:   { readable: 40, readableDelay: 95, batch: 10,  batchDelay: 60 },
+    medium: { readable: 30, readableDelay: 55, batch: 75,  batchDelay: 16 },
+    fast:   { readable: 10, readableDelay: 20, batch: 600, batchDelay: 5 },
+  }
+  const S = SPEEDS[speed] || SPEEDS.medium
+  const READABLE = S.readable   // first N tries shown one-by-one so the order is clear
+  const BATCH = S.batch         // then this many per frame — EVERY one is still shown
   let li = 0, idx = 0, counter = 0, header = false
 
   const tick = () => {
@@ -81,8 +89,8 @@ export function runCracker(ctx, { creds, onStart, onProgress, onCrack, onFail })
     const seg = plan[li]
     if (!header) { print({ k:'info', v:`[*] trying ${seg.L}-character passwords  (${seg.countL.toLocaleString()} combinations)` }); header = true }
 
-    const slow = counter < READABLE
-    const size = slow ? 1 : BATCH
+    const readablePhase = counter < READABLE
+    const size = readablePhase ? 1 : BATCH
     const batch = []
     let lastCand = '', found = false
     for (let n = 0; n < size && idx <= seg.last; n++, idx++) {
@@ -107,7 +115,7 @@ export function runCracker(ctx, { creds, onStart, onProgress, onCrack, onFail })
       onCrack && onCrack({ user, pass }); setBusy(false); return
     }
     if (idx > seg.last) { li++; idx = 0; header = false }
-    schedule(tick, slow ? 55 : 16)
+    schedule(tick, readablePhase ? S.readableDelay : S.batchDelay)
   }
   schedule(tick, 300)
 }
@@ -127,6 +135,9 @@ export default function PageBruteForce() {
   const [mPass, setMPass]   = useState('')     // manual login: password field
   const [loginErr, setLoginErr] = useState(false)
   const [showPass, setShowPass] = useState(false)
+  const [speed, setSpeed] = useState('medium')   // cracker streaming speed: slow | medium | fast
+  const speedRef = useRef(speed)
+  speedRef.current = speed                        // keep the latest speed for the terminal command
 
   const go = p => {
     let c = (p || '/').trim().replace(/^https?:\/\//i, '').replace(new RegExp('^' + HOST.replace(/\./g, '\\.'), 'i'), '').toLowerCase()
@@ -137,6 +148,7 @@ export default function PageBruteForce() {
 
   const cracker = ctx => runCracker(ctx, {
     creds: CREDS,
+    speed: speedRef.current,
     onStart: () => { setCracked(null); setFailed(false); setAtk({ user: '', pass: '', n: 0 }); setPage('/login'); setAddr(HOST + '/login') },
     onProgress: setAtk,
     onCrack: setCracked,
@@ -357,6 +369,18 @@ export default function PageBruteForce() {
         <span style={{ color:'#4ade80', fontFamily:'monospace', fontSize:12, fontWeight:700 }}>$</span>
         <code style={{ flex:1, fontFamily:'monospace', fontSize:12.5, color:'#a5f3fc', minWidth:200 }}>cracker admin 3 {HOST}</code>
         <button onClick={() => navigator.clipboard && navigator.clipboard.writeText(`cracker admin 3 ${HOST}`)} style={{ background:'#1e293b', border:'1px solid #334155', borderRadius:6, color:'#94a3b8', cursor:'pointer', fontSize:11, padding:'3px 10px' }}>{isAr ? '⧉ نسخ' : '⧉ copy'}</button>
+      </div>
+
+      {/* speed selector */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+        <span style={{ fontSize:12, fontWeight:800, color:'#64748b' }}>{isAr ? 'سرعة الأداة:' : 'Tool speed:'}</span>
+        {[['slow', isAr ? 'بطيء' : 'Slow', '🐢'], ['medium', isAr ? 'متوسط' : 'Medium', '⚡'], ['fast', isAr ? 'سريع' : 'Fast', '🚀']].map(([key, label, emoji]) => (
+          <button key={key} onClick={() => setSpeed(key)}
+            style={{ border:`2px solid ${speed === key ? '#7c3aed' : '#e2e8f0'}`, background: speed === key ? '#7c3aed' : 'white', color: speed === key ? 'white' : '#475569', borderRadius:8, padding:'5px 14px', fontSize:12, fontWeight:800, cursor:'pointer', transition:'all .15s' }}>
+            {emoji} {label}
+          </button>
+        ))}
+        <span style={{ fontSize:11, color:'#94a3b8' }}>{isAr ? '(اختر قبل تشغيل الأداة)' : '(choose before running the tool)'}</span>
       </div>
 
       {/* terminal + browser side by side */}
