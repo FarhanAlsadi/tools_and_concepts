@@ -6,23 +6,23 @@ import Explanation from '../components/Explanation'
 
 /* ────────────────────────────────────────────────────────────────────────────
    RANSOMWARE SIMULATION (safe, in-page only) — simulated PC
-   The student sees a realistic desktop (wallpaper, icons, taskbar). They open
-   the browser (from the taskbar or a desktop shortcut) to reach a Gmail-style
-   inbox, read a booby-trapped email and download its attachment. The browser
-   closes, the desktop files get locked one by one, and a full-screen ransom
-   note (< 24h countdown) takes over. A multiple-choice question then asks for
-   their response — teaching that BACKUPS (not paying) are the real defense.
+   A realistic desktop (wallpaper, icons, taskbar). Files actually open in their
+   apps (image viewer, Word, Excel, PowerPoint, PDF, music player, archive), and
+   the browser opens a Gmail-style inbox — switch between them like a real PC.
+   Downloading the booby-trapped attachment closes windows, encrypts the desktop
+   files one by one, and a full-screen ransom note (< 24h) takes over, followed
+   by a multiple-choice question. Lesson: BACKUPS (not paying) are the defense.
    ──────────────────────────────────────────────────────────────────────────── */
 
 const INIT_FILES = [
-  { name: 'صور_العائلة.jpg', en: 'family_photos.jpg', icon: '🖼️' },
-  { name: 'الواجب.pdf',       en: 'homework.pdf',       icon: '📄' },
-  { name: 'مشروعي.pptx',      en: 'my_project.pptx',    icon: '📊' },
-  { name: 'حساباتي.xlsx',     en: 'accounts.xlsx',      icon: '📗' },
-  { name: 'سيرتي_الذاتية.docx',en: 'resume.docx',        icon: '📝' },
-  { name: 'أغنية.mp3',        en: 'song.mp3',           icon: '🎵' },
-  { name: 'رحلة_قطر.jpg',     en: 'qatar_trip.jpg',     icon: '🏞️' },
-  { name: 'ألعاب.zip',        en: 'games.zip',          icon: '🗜️' },
+  { name: 'صور_العائلة.png', en: 'family_photo.png', icon: '🖼️', kind: 'photoFamily' },
+  { name: 'الواجب.pdf',       en: 'homework.pdf',       icon: '📄', kind: 'pdf' },
+  { name: 'مشروعي.pptx',      en: 'my_project.pptx',    icon: '📊', kind: 'slides' },
+  { name: 'حساباتي.xlsx',     en: 'accounts.xlsx',      icon: '📗', kind: 'sheet' },
+  { name: 'سيرتي_الذاتية.docx',en: 'resume.docx',        icon: '📝', kind: 'doc' },
+  { name: 'أغنية.mp3',        en: 'song.mp3',           icon: '🎵', kind: 'audio' },
+  { name: 'رحلة_قطر.jpg',     en: 'qatar_trip.jpg',     icon: '🏞️', kind: 'photoTrip' },
+  { name: 'ألعاب.zip',        en: 'games.zip',          icon: '🗜️', kind: 'zip' },
 ]
 
 const PREVENT = [
@@ -90,8 +90,7 @@ const fmtTime = s => {
   return `${h}:${m}:${sec}`
 }
 
-// A single desktop icon (also used for the browser shortcut). Module-scope so
-// its identity is stable across renders (no remounting).
+// A single desktop icon (module-scope for a stable identity across renders).
 function DeskIcon({ emoji, label, onClick, locked }) {
   return (
     <button onClick={onClick} disabled={!onClick} className="flex flex-col items-center gap-1 w-[74px] p-1 rounded-lg hover:bg-white/15 transition-colors" style={{ cursor: onClick ? 'pointer' : 'default' }}>
@@ -101,16 +100,36 @@ function DeskIcon({ emoji, label, onClick, locked }) {
   )
 }
 
+// A generic application window (title bar + scrollable content).
+function AppWindow({ ar, title, icon, onClose, children }) {
+  return (
+    <div className="absolute z-30 bg-white rounded-lg overflow-hidden shadow-2xl flex flex-col" style={{ top: 10, bottom: 54, insetInlineStart: 10, insetInlineEnd: 10 }}>
+      <div className="flex items-center gap-2 px-3 h-9 flex-shrink-0" style={{ background: '#dee1e6' }}>
+        <div className="flex items-center gap-1.5">
+          <button onClick={onClose} title={ar ? 'إغلاق' : 'Close'} className="w-3 h-3 rounded-full" style={{ background: '#ff5f57' }} />
+          <span className="w-3 h-3 rounded-full" style={{ background: '#febc2e' }} />
+          <span className="w-3 h-3 rounded-full" style={{ background: '#28c840' }} />
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold ms-2">{icon} {title}</div>
+        <div className="flex-1" />
+        <button onClick={onClose} className="text-slate-500 text-sm font-bold px-1" title={ar ? 'إغلاق' : 'Close'}>✕</button>
+      </div>
+      <div className="flex-1 min-h-0 overflow-auto">{children}</div>
+    </div>
+  )
+}
+
 export default function PageRansomware() {
   const navigate = useNavigate()
   const { lang } = useApp()
   const ar = lang === 'ar'
 
   const [phase, setPhase]         = useState('pc')     // pc | ransom | paid | restored | rebooted
-  const [browserOpen, setBrowser] = useState(false)    // is the browser window focused
+  const [browserOpen, setBrowser] = useState(false)
+  const [openFile, setOpenFile]   = useState(null)     // index of the open desktop file (null = none)
   const [folder, setFolder]       = useState('inbox')
   const [openMail, setOpenMail]   = useState(null)
-  const [attacking, setAttacking] = useState(false)    // encryption in progress
+  const [attacking, setAttacking] = useState(false)
   const [locked, setLocked]       = useState(() => INIT_FILES.map(() => false))
   const [secs, setSecs]           = useState(5 * 3600 + 59 * 60 + 59)   // < 24h deadline
   const timers = useRef([])
@@ -125,11 +144,15 @@ export default function PageRansomware() {
   const everOpened  = useRef(false)
   if (browserOpen) everOpened.current = true
 
-  // Open the attachment → close the browser, encrypt the desktop, then the note.
+  const showBrowser = () => { setOpenFile(null); setBrowser(true) }
+  const showDesktop = () => { setOpenFile(null); setBrowser(false) }
+  const openFileWin = i => { if (phase !== 'pc' || locked[i]) return; setBrowser(false); setOpenFile(i) }
+
+  // Open the attachment → close windows, encrypt the desktop, then the note.
   const downloadFile = () => {
     if (attacking || phase !== 'pc') return
     setAttacking(true)
-    timers.current.push(setTimeout(() => setBrowser(false), 500))   // browser closes → desktop shows
+    timers.current.push(setTimeout(() => { setBrowser(false); setOpenFile(null) }, 500))
     INIT_FILES.forEach((_, i) => {
       timers.current.push(setTimeout(() => {
         setLocked(prev => { const n = [...prev]; n[i] = true; return n })
@@ -152,7 +175,7 @@ export default function PageRansomware() {
   const restart = () => {
     timers.current.forEach(clearTimeout); timers.current = []; clearInterval(tick.current)
     everOpened.current = false
-    setPhase('pc'); setBrowser(false); setFolder('inbox'); setOpenMail(null)
+    setPhase('pc'); setBrowser(false); setOpenFile(null); setFolder('inbox'); setOpenMail(null)
     setAttacking(false); setLocked(INIT_FILES.map(() => false)); setSecs(5 * 3600 + 59 * 60 + 59)
   }
 
@@ -162,20 +185,17 @@ export default function PageRansomware() {
     rebooted: { ok: false, icon: '🔌', titleAr: 'أعدت التشغيل فقط — الملفات ما زالت مقفلة', titleEn: 'You just rebooted — files still locked', bodyEn: 'Rebooting does nothing: the files are encrypted with a key only the attacker has. Without a backup, they are gone. This is why backups matter.', bodyAr: 'إعادة التشغيل لا تفعل شيئاً: الملفات مشفّرة بمفتاح لدى المهاجم فقط. بدون نسخة احتياطية، فقدتها. لهذا النُّسخ الاحتياطية مهمة.' },
   }
 
-  const showHint = phase === 'pc' && !browserOpen && !attacking && !everOpened.current
+  const showHint = phase === 'pc' && !browserOpen && openFile === null && !attacking && !everOpened.current
 
   return (
     <div dir={ar ? 'rtl' : 'ltr'} className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-5">
         <span className="px-2.5 py-0.5 rounded-full text-xs font-bold" style={{ background: '#fee2e2', color: '#b91c1c' }}>{ar ? '🧪 محاكاة آمنة' : '🧪 Safe simulation'}</span>
         <h1 className="text-2xl font-black text-slate-800 mt-2 mb-1">🔒 {ar ? 'محاكاة برامج الفدية' : 'Ransomware Simulation'}</h1>
-        <p className="text-sm text-slate-500">{ar ? 'هذا حاسوبك. افتح المتصفح لقراءة بريدك، وبدّل بين سطح المكتب والمتصفح كما في جهاز حقيقي.' : 'This is your PC. Open the browser to read your email, and switch between the desktop and the browser like a real machine.'}</p>
+        <p className="text-sm text-slate-500">{ar ? 'هذا حاسوبك. افتح ملفاتك أو تصفّح بريدك، وبدّل بين النوافذ كما في جهاز حقيقي.' : 'This is your PC. Open your files or browse your email, and switch between windows like a real machine.'}</p>
       </div>
 
-      {/* ── The simulated PC (monitor) ─────────────────────────────────── */}
-      {phase !== 'paid' && phase !== 'restored' && phase !== 'rebooted' ? (
-        Monitor()
-      ) : (
+      {phase === 'paid' || phase === 'restored' || phase === 'rebooted' ? (
         <>
           {Monitor()}
           <div className={`mt-4 rounded-2xl border-2 p-5 ${OUTCOME[phase].ok ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
@@ -198,9 +218,11 @@ export default function PageRansomware() {
             </div>
           </div>
         </>
+      ) : (
+        Monitor()
       )}
 
-      {/* ── Multiple-choice question — separate card under the screen ──── */}
+      {/* Multiple-choice question — separate card under the screen */}
       {phase === 'ransom' && (
         <div className="mt-4 bg-white rounded-2xl border-2 border-slate-200 p-5">
           <h3 className="text-base font-black text-slate-800 mb-1">❓ {ar ? 'ما ردّك الصحيح على هذا الهجوم؟' : 'What is your correct response to this attack?'}</h3>
@@ -224,14 +246,14 @@ export default function PageRansomware() {
 
       <Explanation>
         <p className="text-slate-500 text-sm leading-relaxed">
-          {ar ? 'برنامج الفدية يشفّر كل ملفاتك ويطلب مالاً لفكّها. جرّب السيناريو بأمان: افتح المتصفح، اقرأ الرسالة المشبوهة ونزّل مرفقها، شاهد ملفاتك تُقفَل على سطح المكتب — ثم أجب عن السؤال باختيار ردّك الصحيح.'
-              : 'Ransomware encrypts all your files and demands money to unlock them. Try the scenario safely: open the browser, read the suspicious email and download its attachment, watch your desktop files get locked — then answer the question by choosing your correct response.'}
+          {ar ? 'برنامج الفدية يشفّر كل ملفاتك ويطلب مالاً لفكّها. جرّب السيناريو بأمان: تصفّح ملفاتك وبريدك، افتح الرسالة المشبوهة ونزّل مرفقها، شاهد ملفاتك تُقفَل — ثم أجب عن السؤال باختيار ردّك الصحيح.'
+              : 'Ransomware encrypts all your files and demands money to unlock them. Try the scenario safely: browse your files and email, open the suspicious message and download its attachment, watch your files get locked — then answer the question by choosing your correct response.'}
         </p>
       </Explanation>
     </div>
   )
 
-  // ── Monitor (desktop + browser + ransom overlay + taskbar) ──────────────
+  // ── Monitor (desktop + windows + ransom overlay + taskbar) ──────────────
   function Monitor() {
     return (
       <div className="rounded-2xl p-2 sm:p-3 shadow-xl" style={{ background: '#0b0f19' }}>
@@ -239,9 +261,11 @@ export default function PageRansomware() {
 
           {/* desktop icons */}
           <div className="absolute inset-0 p-3 flex flex-col flex-wrap content-start gap-1" style={{ paddingBottom: 56 }}>
-            <DeskIcon emoji="🌐" label={ar ? 'المتصفح' : 'Browser'} onClick={phase === 'pc' ? () => setBrowser(true) : undefined} />
+            <DeskIcon emoji="🌐" label={ar ? 'المتصفح' : 'Browser'} onClick={phase === 'pc' ? showBrowser : undefined} />
             {INIT_FILES.map((f, i) => (
-              <DeskIcon key={i} emoji={f.icon} locked={locked[i]} label={locked[i] ? ((ar ? f.name : f.en) + '.locked') : (ar ? f.name : f.en)} />
+              <DeskIcon key={i} emoji={f.icon} locked={locked[i]}
+                label={locked[i] ? ((ar ? f.name : f.en) + '.locked') : (ar ? f.name : f.en)}
+                onClick={phase === 'pc' && !locked[i] ? () => openFileWin(i) : undefined} />
             ))}
           </div>
 
@@ -254,31 +278,34 @@ export default function PageRansomware() {
 
           {/* hint bubble */}
           {showHint && (
-            <div className="absolute z-20 bottom-14 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl shadow-lg flex items-center gap-2">
-              👇 {ar ? 'افتح المتصفح لقراءة بريدك' : 'Open the browser to read your email'}
+            <div className="absolute z-20 bottom-14 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl shadow-lg">
+              🖱️ {ar ? 'انقر أي ملف لفتحه، أو افتح المتصفح لقراءة بريدك' : 'Click any file to open it, or open the browser for your email'}
             </div>
           )}
+
+          {/* file window */}
+          {openFile !== null && phase === 'pc' && (() => {
+            const app = fileApp(openFile)
+            return <AppWindow ar={ar} title={app.title} icon={app.icon} onClose={() => setOpenFile(null)}>{app.node}</AppWindow>
+          })()}
 
           {/* browser window */}
           {browserOpen && phase === 'pc' && (
             <div className="absolute z-30 bg-white rounded-lg overflow-hidden shadow-2xl flex flex-col" style={{ top: 10, bottom: 54, insetInlineStart: 10, insetInlineEnd: 10 }}>
-              {/* title bar */}
               <div className="flex items-center gap-2 px-3 h-9 flex-shrink-0" style={{ background: '#dee1e6' }}>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => setBrowser(false)} title={ar ? 'تصغير' : 'Minimize'} className="w-3 h-3 rounded-full" style={{ background: '#febc2e' }} />
+                  <button onClick={showDesktop} title={ar ? 'إغلاق' : 'Close'} className="w-3 h-3 rounded-full" style={{ background: '#ff5f57' }} />
+                  <span className="w-3 h-3 rounded-full" style={{ background: '#febc2e' }} />
                   <span className="w-3 h-3 rounded-full" style={{ background: '#28c840' }} />
-                  <button onClick={() => setBrowser(false)} title={ar ? 'إغلاق' : 'Close'} className="w-3 h-3 rounded-full" style={{ background: '#ff5f57' }} />
                 </div>
                 <div className="flex items-center gap-1.5 bg-white/70 rounded-t-lg px-3 py-1 text-xs text-slate-600 font-bold ms-2">✉️ {ar ? 'البريد' : 'Mail'}</div>
                 <div className="flex-1" />
-                <button onClick={() => setBrowser(false)} className="text-slate-500 text-sm font-bold px-1" title={ar ? 'تصغير' : 'Minimize'}>—</button>
+                <button onClick={showDesktop} className="text-slate-500 text-sm font-bold px-1" title={ar ? 'تصغير' : 'Minimize'}>—</button>
               </div>
-              {/* address bar */}
               <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 flex-shrink-0 bg-white">
                 <span className="text-slate-400 text-sm">←&nbsp;→&nbsp;⟳</span>
                 <div className="flex-1 flex items-center gap-1.5 bg-slate-100 rounded-full px-3 py-1 text-xs text-slate-500" dir="ltr">🔒 mail.google.com/mail/u/0/#inbox</div>
               </div>
-              {/* Gmail app */}
               <div className="flex-1 min-h-0 overflow-hidden">{Gmail()}</div>
             </div>
           )}
@@ -304,13 +331,10 @@ export default function PageRansomware() {
           {/* taskbar */}
           <div className="absolute bottom-0 inset-x-0 z-30 h-[46px] flex items-center gap-2 px-3" style={{ background: 'rgba(10,14,25,0.82)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <button className="w-8 h-8 rounded-md flex items-center justify-center text-white/90 hover:bg-white/10" title={ar ? 'ابدأ' : 'Start'}>⊞</button>
-            <button
-              onClick={() => phase === 'pc' && setBrowser(o => !o)}
+            <button onClick={() => phase === 'pc' && (browserOpen ? showDesktop() : showBrowser())}
               className={`w-8 h-8 rounded-md flex items-center justify-center text-lg hover:bg-white/10 ${showHint ? 'animate-pulse' : ''}`}
-              style={{ background: browserOpen ? 'rgba(255,255,255,0.18)' : 'transparent' }}
-              title={ar ? 'المتصفح' : 'Browser'}
-            >🌐</button>
-            <button className="w-8 h-8 rounded-md flex items-center justify-center text-lg hover:bg-white/10" title={ar ? 'الملفات' : 'Files'}>🗂️</button>
+              style={{ background: browserOpen ? 'rgba(255,255,255,0.18)' : 'transparent' }} title={ar ? 'المتصفح' : 'Browser'}>🌐</button>
+            <button onClick={showDesktop} className="w-8 h-8 rounded-md flex items-center justify-center text-lg hover:bg-white/10" title={ar ? 'سطح المكتب' : 'Show desktop'}>🗂️</button>
             <div className="flex-1" />
             <div className="text-white/80 text-xs font-mono leading-tight text-center">
               <div>10:30</div>
@@ -322,12 +346,123 @@ export default function PageRansomware() {
     )
   }
 
+  // ── File viewers (what opens when you click a desktop file) ─────────────
+  function fileApp(i) {
+    const f = INIT_FILES[i]
+    switch (f.kind) {
+      case 'photoFamily':
+        return { title: ar ? 'عارض الصور' : 'Photos', icon: '🖼️', node: (
+          <div className="h-full flex flex-col items-center justify-center gap-3 p-4" style={{ background: '#0f172a' }}>
+            <div className="rounded-xl w-full max-w-sm flex items-center justify-center text-7xl" style={{ aspectRatio: '4 / 3', background: 'linear-gradient(135deg,#fca5a5,#fdba74,#fcd34d)' }}>👨‍👩‍👧‍👦</div>
+            <div className="text-white/80 text-sm">{ar ? 'عائلتي في العيد 🎉' : 'My family on Eid 🎉'}</div>
+          </div>
+        ) }
+      case 'photoTrip':
+        return { title: ar ? 'عارض الصور' : 'Photos', icon: '🏞️', node: (
+          <div className="h-full flex flex-col items-center justify-center gap-3 p-4" style={{ background: '#0f172a' }}>
+            <div className="rounded-xl w-full max-w-sm flex items-end justify-center text-6xl pb-5" style={{ aspectRatio: '4 / 3', background: 'linear-gradient(180deg,#38bdf8,#0ea5e9 55%,#f59e0b)' }}>🕌 🏙️</div>
+            <div className="text-white/80 text-sm">{ar ? 'كتارا، الدوحة' : 'Katara, Doha'}</div>
+          </div>
+        ) }
+      case 'pdf':
+        return { title: ar ? 'عارض PDF' : 'PDF Viewer', icon: '📄', node: (
+          <div className="p-5 bg-slate-100 min-h-full">
+            <div className="bg-white shadow max-w-md mx-auto p-6 rounded">
+              <h3 className="font-black text-slate-800 text-center">{ar ? 'واجب الرياضيات — الصف السابع' : 'Math Homework — Grade 7'}</h3>
+              <ol className="mt-4 space-y-3 text-sm text-slate-700 list-decimal ps-5">
+                <li>{ar ? 'احسب: ٢٥ × ٤ = ؟' : 'Compute: 25 × 4 = ?'}</li>
+                <li>{ar ? 'ما محيط مربع طول ضلعه ٦ سم؟' : 'Perimeter of a square with side 6 cm?'}</li>
+                <li>{ar ? 'بسّط الكسر ٨ / ١٢.' : 'Simplify the fraction 8/12.'}</li>
+                <li>{ar ? 'اذكر ثلاثة أعداد أولية.' : 'Name three prime numbers.'}</li>
+              </ol>
+              <div className="text-[10px] text-slate-400 text-center mt-6">— {ar ? 'صفحة ١ من ١' : 'Page 1 of 1'} —</div>
+            </div>
+          </div>
+        ) }
+      case 'slides':
+        return { title: 'PowerPoint', icon: '📊', node: (
+          <div className="p-5 min-h-full flex items-center justify-center" style={{ background: '#cbb' }}>
+            <div className="bg-white shadow-lg w-full max-w-md rounded p-6 flex flex-col relative" style={{ aspectRatio: '16 / 9', borderTop: '6px solid #d24726' }}>
+              <h3 className="font-black text-2xl text-slate-800">{ar ? 'النظام الشمسي' : 'The Solar System'}</h3>
+              <ul className="mt-3 space-y-1.5 text-sm text-slate-600 list-disc ps-5">
+                <li>{ar ? 'الكواكب الثمانية' : 'The eight planets'}</li>
+                <li>{ar ? 'الشمس نجم في مركز المجموعة' : 'The Sun is a star at the center'}</li>
+                <li>{ar ? 'الأرض هي كوكبنا' : 'Earth is our planet'}</li>
+              </ul>
+              <div className="absolute bottom-2 end-3 text-[10px] text-slate-400">{ar ? 'شريحة ١ / ٥' : 'Slide 1 / 5'}</div>
+            </div>
+          </div>
+        ) }
+      case 'sheet': {
+        const rows = [[ar ? 'مصروف' : 'Allowance', 500], [ar ? 'كتب' : 'Books', 120], [ar ? 'مواصلات' : 'Transport', 300], [ar ? 'توفير' : 'Savings', 80]]
+        return { title: 'Excel', icon: '📗', node: (
+          <div className="min-h-full bg-white p-3">
+            <table className="w-full text-sm border-collapse">
+              <thead><tr>
+                <th className="border border-slate-300 px-3 py-1.5 text-white text-start" style={{ background: '#217346' }}>{ar ? 'البند' : 'Item'}</th>
+                <th className="border border-slate-300 px-3 py-1.5 text-white text-start" style={{ background: '#217346' }}>{ar ? 'المبلغ (ريال)' : 'Amount (QAR)'}</th>
+              </tr></thead>
+              <tbody>
+                {rows.map(([k, v]) => (
+                  <tr key={k}><td className="border border-slate-200 px-3 py-1.5 text-slate-700">{k}</td><td className="border border-slate-200 px-3 py-1.5 text-slate-700 font-mono">{num(v)}</td></tr>
+                ))}
+                <tr className="font-black"><td className="border border-slate-200 px-3 py-1.5 text-slate-800">{ar ? 'الإجمالي' : 'Total'}</td><td className="border border-slate-200 px-3 py-1.5 text-slate-800 font-mono">{num(1000)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        ) }
+      }
+      case 'doc':
+        return { title: 'Word', icon: '📝', node: (
+          <div className="p-5 bg-slate-100 min-h-full">
+            <div className="bg-white shadow max-w-md mx-auto p-6 rounded" style={{ borderTop: '6px solid #2b579a' }}>
+              <h3 className="font-black text-xl text-slate-800">{ar ? 'أحمد الكواري' : 'Ahmed Al-Kuwari'}</h3>
+              <div className="text-xs text-slate-500">{ar ? 'طالب ومطوّر ويب' : 'Student & Web Developer'}</div>
+              <h4 className="font-bold text-sm text-slate-700 mt-4 mb-1">{ar ? 'المهارات' : 'Skills'}</h4>
+              <p className="text-sm text-slate-600">Python · HTML · CSS · {ar ? 'أمن سيبراني' : 'Cybersecurity'}</p>
+              <h4 className="font-bold text-sm text-slate-700 mt-3 mb-1">{ar ? 'التعليم' : 'Education'}</h4>
+              <p className="text-sm text-slate-600">{ar ? 'ثانوية الدوحة — ٢٠٢٥' : 'Doha High School — 2025'}</p>
+            </div>
+          </div>
+        ) }
+      case 'audio':
+        return { title: ar ? 'مشغّل الموسيقى' : 'Music Player', icon: '🎵', node: (
+          <div className="h-full flex flex-col items-center justify-center gap-3 p-6" style={{ background: '#111827' }}>
+            <div className="w-40 h-40 rounded-xl flex items-center justify-center text-6xl shadow-lg" style={{ background: 'linear-gradient(135deg,#8b5cf6,#ec4899)' }}>🎵</div>
+            <div className="text-white font-bold mt-1">{ar ? 'أغنيتي المفضّلة' : 'My Favorite Song'}</div>
+            <div className="text-white/50 text-xs">{ar ? 'فنان مجهول' : 'Unknown Artist'}</div>
+            <div className="w-full max-w-xs mt-1">
+              <div className="h-1 bg-white/20 rounded-full"><div className="h-1 bg-white rounded-full" style={{ width: '35%' }} /></div>
+              <div className="flex justify-between text-[10px] text-white/50 mt-1" dir="ltr"><span>1:23</span><span>3:45</span></div>
+            </div>
+            <div className="flex items-center gap-6 text-white text-2xl mt-1">⏮️ ▶️ ⏭️</div>
+          </div>
+        ) }
+      case 'zip': {
+        const items = [['Minecraft.exe', '12 MB'], ['setup.dat', '4 MB'], ['readme.txt', '2 KB'], ['save1.dat', '340 KB']]
+        return { title: ar ? 'مدير الأرشيف' : 'Archive Manager', icon: '🗜️', node: (
+          <div className="min-h-full bg-white p-3">
+            <div className="text-xs text-slate-500 mb-2">📦 games.zip — {ar ? '٤ عناصر' : '4 items'}</div>
+            <table className="w-full text-xs">
+              <thead><tr className="text-slate-400 border-b border-slate-200"><th className="text-start py-1 font-bold">{ar ? 'الاسم' : 'Name'}</th><th className="text-start py-1 font-bold">{ar ? 'الحجم' : 'Size'}</th></tr></thead>
+              <tbody>
+                {items.map(([n, s]) => (
+                  <tr key={n} className="border-b border-slate-100"><td className="py-1.5 text-slate-700 font-mono" dir="ltr">📄 {n}</td><td className="py-1.5 text-slate-500 font-mono" dir="ltr">{s}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) }
+      }
+      default:
+        return { title: ar ? 'ملف' : 'File', icon: '📄', node: <div className="p-6 text-slate-500 text-sm">{ar ? 'لا يمكن عرض هذا الملف.' : 'Cannot preview this file.'}</div> }
+    }
+  }
+
   // ── Gmail app (rendered inside the browser window) ──────────────────────
   function Gmail() {
-    const inboxUnread = MAIL.inbox.filter(m => m.unread).length
     return (
       <div className="flex flex-col h-full bg-white" dir={ar ? 'rtl' : 'ltr'}>
-        {/* gmail top bar */}
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 flex-shrink-0">
           <span className="text-slate-500">☰</span>
           <span className="flex items-center gap-1 font-bold text-slate-700"><span style={{ color: '#EA4335' }}>✉️</span><span className="hidden sm:inline text-sm">{ar ? 'البريد' : 'Mail'}</span></span>
@@ -336,7 +471,6 @@ export default function PageRansomware() {
         </div>
 
         <div className="flex flex-1 min-h-0">
-          {/* sidebar (right in RTL) */}
           <div className="w-32 sm:w-40 flex-shrink-0 py-2 px-1.5 overflow-y-auto">
             <button className="flex items-center gap-2 px-3 py-2 mb-2 rounded-2xl shadow-sm font-bold text-xs text-slate-700" style={{ background: '#c2e7ff' }}><span>✏️</span>{ar ? 'إنشاء' : 'Compose'}</button>
             <div className="space-y-0.5">
@@ -355,7 +489,6 @@ export default function PageRansomware() {
             </div>
           </div>
 
-          {/* main */}
           <div className="flex-1 min-w-0 border-s border-slate-200 overflow-y-auto">
             {!openObj ? (
               mailList.length === 0 ? (
