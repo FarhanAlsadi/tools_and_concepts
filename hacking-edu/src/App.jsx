@@ -16,6 +16,7 @@ import PageDDoS from './pages/PageDDoS'
 import PagePasswordGenerator from './pages/PagePasswordGenerator'
 import PagePhishing from './pages/PagePhishing'
 import PageRansomware from './pages/PageRansomware'
+import PageWifiSniff from './pages/PageWifiSniff'
 import PageLinuxHub from './pages/PageLinuxHub'
 import PageLxTerminal from './pages/PageLxTerminal'
 import PageLxFs from './pages/PageLxFs'
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/password-gen" element={<PagePasswordGenerator />} />
         <Route path="/phishing" element={<PagePhishing />} />
         <Route path="/ransomware" element={<PageRansomware />} />
+        <Route path="/wifi-sniff" element={<PageWifiSniff />} />
         <Route path="/linux" element={<PageLinuxHub />} />
         <Route path="/lx-terminal" element={<PageLxTerminal />} />
         <Route path="/lx-fs" element={<PageLxFs />} />

@@ -74,6 +74,16 @@ export const LESSONS = [
     page: '/ransomware', typeAr: 'مختبر', typeEn: 'Lab',
   },
   {
+    icon: <Wifi className="w-5 h-5" />,
+    color: 'bg-rose-100 text-rose-700',
+    badge: 'bg-rose-50 text-rose-600 border-rose-200',
+    titleAr: 'التنصّت على الواي فاي العام',
+    titleEn: 'Public WiFi Sniffing',
+    descAr: 'كن المهاجم على شبكة مقهى مفتوحة: شغّل أداة التقاط مثل Wireshark وشاهد الحزم تتدفّق — اقرأ محتوى مواقع HTTP بنص صريح (دخول ورسائل)، بينما تظهر مواقع HTTPS مشفّرة لا يمكن قراءتها',
+    descEn: 'Be the attacker on an open café network: run a Wireshark-style capture and watch packets stream — read HTTP sites in plaintext (logins, messages), while HTTPS sites show only unreadable encrypted bytes',
+    page: '/wifi-sniff', typeAr: 'مختبر', typeEn: 'Lab',
+  },
+  {
     icon: <FolderOpen className="w-5 h-5" />,
     color: 'bg-amber-100 text-amber-700',
     badge: 'bg-amber-50 text-amber-600 border-amber-200',

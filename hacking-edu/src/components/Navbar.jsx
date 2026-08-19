@@ -10,6 +10,7 @@ const PAGE_TITLES = {
   '/password-gen':  { ar: 'مولّد كلمات المرور',     en: 'Password Generator' },
   '/phishing':   { ar: 'اكتشف التصيّد',           en: 'Spot the Phishing' },
   '/ransomware': { ar: 'محاكاة برامج الفدية',      en: 'Ransomware Simulation' },
+  '/wifi-sniff': { ar: 'التنصّت على الواي فاي',     en: 'Public WiFi Sniffing' },
   '/linux':      { ar: 'مسار لينكس',            en: 'Linux Track' },
   '/lx-terminal':{ ar: 'لينكس — الطرفية',       en: 'Linux — Terminal' },
   '/lx-fs':      { ar: 'لينكس — نظام الملفات',   en: 'Linux — File System' },
