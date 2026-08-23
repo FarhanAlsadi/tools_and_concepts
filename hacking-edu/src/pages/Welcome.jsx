@@ -115,6 +115,37 @@ export default function Welcome() {
 
       {/* ── Lessons grid ──────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-6 py-12">
+
+        {/* ── Live Quiz banner ─────────────────────────────────────── */}
+        <button
+          onClick={() => navigate('/play')}
+          className="w-full mb-8 rounded-2xl p-5 relative overflow-hidden text-start hover:shadow-xl hover:-translate-y-0.5 transition-all group"
+          style={{ background: '#0E1F39' }}
+          dir={isAr ? 'rtl' : 'ltr'}
+        >
+          <div className="relative z-10 flex items-center gap-4 flex-wrap">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(252,173,15,0.15)' }}>
+              <Gamepad2 className="w-6 h-6" style={{ color: '#FCAD0F' }} />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <h3 className="font-black text-lg text-white mb-0.5">
+                {isAr ? 'مسابقة مباشرة 🎉' : 'Live Quiz 🎉'}
+              </h3>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                {isAr
+                  ? 'عندك رمز من المدرب؟ ادخل نافس زملاءك على لوحة الصدارة!'
+                  : 'Got a code from your trainer? Join and race your classmates on the leaderboard!'}
+              </p>
+            </div>
+            <span
+              className="px-6 py-2.5 rounded-xl font-black text-sm shrink-0 group-hover:scale-105 transition-transform"
+              style={{ background: '#FCAD0F', color: '#0E1F39' }}
+            >
+              {isAr ? 'انضم الآن ←' : 'Join now →'}
+            </span>
+          </div>
+        </button>
+
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-black" style={{ color: '#0E1F39' }}>

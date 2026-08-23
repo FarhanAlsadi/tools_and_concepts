@@ -8,6 +8,8 @@ A standalone **Ethical Hacking lessons** website: a built React/Vite
 single-page app served by a minimal Flask app. Arabic (RTL) only, light theme
 only, no third-party branding. Every lesson is a safe, self-contained
 client-side simulation — there is no database, login, or external service.
+The one server-side feature is the **Live Quiz** (Kahoot-style game, see
+below); its state is in-memory only.
 
 This repo was reduced from a larger "Academy Coordinator" platform down to just
 the hacking lessons; the coordinator/instructor/leaderboard/other-games code was
@@ -15,9 +17,13 @@ removed.
 
 ## Architecture
 
-- **`webapp/app.py`** — minimal static Flask server. Serves the SPA from
-  `static/` at the site root, with an index.html fallback for unknown paths.
-  No API, no database, no auth.
+- **`webapp/app.py`** — minimal Flask server. Serves the SPA from
+  `static/` at the site root, with an index.html fallback for unknown paths
+  (the SPA uses BrowserRouter, so real paths like `/play` rely on this).
+- **`webapp/quiz_api.py`** — the Live Quiz game API (`/api/quiz/…`).
+  Kahoot-style: trainer hosts (PIN from `TRAINER_PIN` env var, default
+  `0000`), attendees join with a 6-digit code, clients poll ~1/s. All state
+  is in-memory: run ONE gunicorn process (`--threads 8`, no `-w`).
 - **`webapp/static/`** — the built SPA (`index.html`, `assets/`, `images/`,
   `fonts/`). **This is a build artifact — do not hand-edit it.**
 - **`hacking-edu/`** — the editable React/Vite source that produces `static/`.
@@ -37,9 +43,13 @@ Key source files:
 - `src/context/AppContext.jsx` — locks `lang='ar'` and `theme='light'` (toggles
   removed; toggle functions kept as no-ops so consumers don't break).
 - `src/components/Navbar.jsx` — top bar (language/theme toggle buttons removed).
-- `src/pages/Welcome.jsx` — landing page: the lessons grid.
+- `src/pages/Welcome.jsx` — landing page: Live Quiz banner + the lessons grid.
 - `src/pages/` — one file per lesson/lab.
-- `vite.config.js` — `base: '/'`, single entry (`index.html`).
+- `src/quiz/` — the Live Quiz front end: `PagePlay.jsx` (attendees, `/play`),
+  `PageHost.jsx` (trainer, `/host`), `QuizEditor.jsx`, `HostGame.jsx`,
+  `xlsxUtils.js` (Excel template + import; `xlsx` is lazy-loaded), `api.js`.
+  Trainer quizzes persist in the trainer's browser localStorage.
+- `vite.config.js` — `base: '/'`, single entry, dev proxy `/api` → `:5050`.
 
 ## Conventions
 
@@ -57,8 +67,9 @@ Key source files:
 cd webapp && python app.py       # http://localhost:5050
 ```
 
-Production: `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120` (see
-`Procfile`, `render.yaml`, `railway.json`).
+Production: `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --threads 8`
+(see `Procfile`, `render.yaml`, `railway.json`). Set the `TRAINER_PIN` env var
+on the host — it protects the Live Quiz trainer panel (`/host`).
 
 ## Git
 

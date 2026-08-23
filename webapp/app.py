@@ -1,18 +1,21 @@
 """
-Minimal static Flask server for the standalone Ethical Hacking lessons.
+Flask server for the standalone Ethical Hacking lessons.
 
 Serves the built React/Vite single-page app from ``static/`` at the site root,
-with an index.html fallback for unknown paths. There is no database,
-authentication, or API — every lesson runs entirely client-side (the antivirus
-lab safely falls back to its built-in EICAR demo when no proxy is configured).
+with an index.html fallback for unknown paths. Lessons run entirely
+client-side; the only server-side feature is the Live Quiz game API
+(``/api/quiz/…``, see ``quiz_api.py``), which keeps its state in memory —
+run ONE gunicorn process (threads are fine).
 
 Run locally:   python app.py           # http://localhost:5050
-Production:     gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120
+Production:     gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --threads 8
 """
 
 import os
 
 from flask import Flask, send_from_directory
+
+from quiz_api import quiz_bp
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -20,6 +23,7 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 # static_folder=None: we serve everything explicitly below, so Flask's default
 # "/static/<path>" route doesn't shadow the SPA's root-based asset paths.
 app = Flask(__name__, static_folder=None)
+app.register_blueprint(quiz_bp)
 
 
 @app.route("/")

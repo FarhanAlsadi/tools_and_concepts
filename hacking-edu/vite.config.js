@@ -11,4 +11,8 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
+  server: {
+    // Local dev: forward the Live Quiz API to the Flask server.
+    proxy: { '/api': 'http://localhost:5050' },
+  },
 })

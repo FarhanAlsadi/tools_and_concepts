@@ -25,6 +25,8 @@ import PageLxHydra from './pages/PageLxHydra'
 import PageLxChallenge from './pages/PageLxChallenge'
 import PageTesting from './pages/PageTesting'
 import PageRansomwareGame from './pages/PageRansomwareGame'
+import PagePlay from './quiz/PagePlay'
+import PageHost from './quiz/PageHost'
 
 export default function App() {
   return (
@@ -47,6 +49,9 @@ export default function App() {
         <Route path="/lx-gobuster" element={<PageLxGobuster />} />
         <Route path="/lx-hydra" element={<PageLxHydra />} />
         <Route path="/lx-challenge" element={<PageLxChallenge />} />
+        {/* ── Live Quiz (Kahoot-style): attendees join, trainer hosts ── */}
+        <Route path="/play" element={<PagePlay />} />
+        <Route path="/host" element={<PageHost />} />
         {/* ── Hidden testing area (not shown on the main lessons page) ── */}
         <Route path="/testing" element={<PageTesting />} />
         <Route path="/testing/ransomware" element={<PageRansomwareGame />} />

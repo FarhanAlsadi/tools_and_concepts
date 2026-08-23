@@ -5,14 +5,22 @@ and labs (brute-force, ciphers, VPN, DoS/DDoS, phishing, ransomware, and a
 real-command Linux track with Gobuster & Hydra), all running as safe
 client-side simulations.
 
+It also includes a **Live Quiz** — a Kahoot-style game for training sessions:
+the trainer builds a quiz at `/host` (PIN-protected; in-app editor or Excel
+import with a downloadable template), attendees join at `/play` with a 6-digit
+code and a nickname, answer timed questions (single/multi choice, true-false,
+and open-ended questions graded live by the trainer) and race up a live
+leaderboard with Kahoot-style speed bonuses.
+
 The site is a built React/Vite single-page app served by a tiny Flask app.
 It is **Arabic + light-theme only** and carries no third-party branding.
 
 ## Layout
 
 ```
-webapp/            Minimal static Flask server
-  app.py             Serves the built SPA (no database, no API)
+webapp/            Minimal Flask server
+  app.py             Serves the built SPA
+  quiz_api.py        Live Quiz game API (in-memory, /api/quiz/…)
   static/            Built SPA (index.html, assets/, images/, fonts/)
 hacking-edu/       Editable React/Vite source for the SPA
 ```
@@ -43,4 +51,8 @@ Then copy `hacking-edu/dist/` over `webapp/static/`.
 ## Deploy
 
 Deployed as a Python web service (Render/Railway configs included).
-Start command: `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120`.
+Start command: `gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --threads 8`
+(one process only — the Live Quiz keeps its game state in memory).
+
+Set the **`TRAINER_PIN`** environment variable on the host: it protects the
+Live Quiz trainer panel at `/host` (defaults to `0000` if unset).
