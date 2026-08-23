@@ -49,6 +49,10 @@ Key source files:
   `PageHost.jsx` (trainer, `/host`), `QuizEditor.jsx`, `HostGame.jsx`,
   `xlsxUtils.js` (Excel template + import; `xlsx` is lazy-loaded), `api.js`.
   Trainer quizzes persist in the trainer's browser localStorage.
+- `src/games/` — client-side team games (no backend): `PageXO.jsx`
+  (`/games/xo`, answer-to-claim tic-tac-toe; question sources: built-in
+  `questionBank.js` or saved trainer quizzes) and `PageMemory.jsx`
+  (`/games/memory`, 3×3 pairs board, 10s preview, fewest mistakes).
 - `vite.config.js` — `base: '/'`, single entry, dev proxy `/api` → `:5050`.
 
 ## Conventions

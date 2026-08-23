@@ -27,6 +27,8 @@ import PageTesting from './pages/PageTesting'
 import PageRansomwareGame from './pages/PageRansomwareGame'
 import PagePlay from './quiz/PagePlay'
 import PageHost from './quiz/PageHost'
+import PageXO from './games/PageXO'
+import PageMemory from './games/PageMemory'
 
 export default function App() {
   return (
@@ -52,6 +54,9 @@ export default function App() {
         {/* ── Live Quiz (Kahoot-style): attendees join, trainer hosts ── */}
         <Route path="/play" element={<PagePlay />} />
         <Route path="/host" element={<PageHost />} />
+        {/* ── Team games (client-side, played on the projected screen) ── */}
+        <Route path="/games/xo" element={<PageXO />} />
+        <Route path="/games/memory" element={<PageMemory />} />
         {/* ── Hidden testing area (not shown on the main lessons page) ── */}
         <Route path="/testing" element={<PageTesting />} />
         <Route path="/testing/ransomware" element={<PageRansomwareGame />} />

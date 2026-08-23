@@ -19,6 +19,8 @@ const PAGE_TITLES = {
   '/lx-challenge':{ ar: 'لينكس — التحدي',        en: 'Linux — Challenge' },
   '/play':       { ar: 'المسابقة المباشرة',       en: 'Live Quiz' },
   '/host':       { ar: 'لوحة المدرب',            en: 'Trainer Panel' },
+  '/games/xo':   { ar: 'إكس-أو التحدي',          en: 'Quiz Tic-Tac-Toe' },
+  '/games/memory': { ar: 'لعبة الذاكرة',          en: 'Memory Game' },
   '/testing':    { ar: 'منطقة الاختبار',          en: 'Testing Area' },
   '/testing/ransomware': { ar: 'مهمّة: أوقف الفدية', en: 'Mission: Stop the Ransomware' },
 }

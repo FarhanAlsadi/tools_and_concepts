@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import {
   Globe, Layers, Map, Server, Terminal, Shield, Lock,
-  KeyRound, MessageSquare, Flame, BookOpen, Wifi, Network, ShieldAlert, Activity, HelpCircle, Swords, MonitorDot, VenetianMask, Fingerprint, FolderOpen, Zap, ShieldCheck, Database, Code2, Gamepad2, Fish, FileLock2, Bug, Camera, ScanSearch, Cookie, Send, ArrowDownUp, Table2
+  KeyRound, MessageSquare, Flame, BookOpen, Wifi, Network, ShieldAlert, Activity, HelpCircle, Swords, MonitorDot, VenetianMask, Fingerprint, FolderOpen, Zap, ShieldCheck, Database, Code2, Gamepad2, Fish, FileLock2, Bug, Camera, ScanSearch, Cookie, Send, ArrowDownUp, Table2, Grid3x3, Brain
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
@@ -116,6 +116,18 @@ export default function Welcome() {
       {/* ── Lessons grid ──────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-6 py-12">
 
+        {/* ── Site heading ─────────────────────────────────────────── */}
+        <div className="text-center mb-10">
+          <h1 className="font-black mb-2" style={{ color: '#0E1F39', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>
+            {isAr ? 'الأمن السيبراني والاختراقات' : 'Cybersecurity & Hacking'}
+          </h1>
+          <p className="text-slate-500 text-sm sm:text-base">
+            {isAr
+              ? 'دروس ومختبرات وألعاب تفاعلية — كلها محاكاة آمنة بالكامل'
+              : 'Interactive lessons, labs and games — all fully safe simulations'}
+          </p>
+        </div>
+
         {/* ── Live Quiz banner ─────────────────────────────────────── */}
         <button
           onClick={() => navigate('/play')}
@@ -145,6 +157,62 @@ export default function Welcome() {
             </span>
           </div>
         </button>
+
+        {/* ── Team games ───────────────────────────────────────────── */}
+        <h2 className="text-2xl font-black mb-4" style={{ color: '#0E1F39' }}>
+          {isAr ? 'ألعاب جماعية' : 'Team Games'}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+          {[
+            {
+              page: '/games/xo',
+              icon: <Grid3x3 className="w-5 h-5" />,
+              color: 'bg-sky-100 text-sky-700',
+              badge: 'bg-sky-50 text-sky-600 border-sky-200',
+              titleAr: 'إكس-أو التحدي', titleEn: 'Quiz Tic-Tac-Toe',
+              descAr: 'فريقان X و O — لتضع علامتك في المربع عليك الإجابة على سؤال أمن سيبراني خلال ٣٠ ثانية. إجابة خاطئة؟ الدور ينتقل للفريق الآخر!',
+              descEn: 'Two teams, X and O — to claim a square you must answer a cybersecurity question in 30 seconds. Wrong answer? The turn passes!',
+            },
+            {
+              page: '/games/memory',
+              icon: <Brain className="w-5 h-5" />,
+              color: 'bg-fuchsia-100 text-fuchsia-700',
+              badge: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200',
+              titleAr: 'لعبة الذاكرة', titleEn: 'Memory Game',
+              descAr: 'شبكة ٣×٣ من الأيقونات تظهر لمدة ١٠ ثوانٍ ثم تختفي — احفظ أماكن الأزواج المتشابهة وأنهِ اللوحة بأقل عدد من الأخطاء',
+              descEn: 'A 3×3 grid of icons appears for 10 seconds then hides — memorize the matching pairs and clear the board with the fewest mistakes',
+            },
+          ].map((game) => (
+            <button
+              key={game.page}
+              onClick={() => navigate(game.page)}
+              className={`bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all ${isAr ? 'text-right' : 'text-left'} group relative overflow-hidden`}
+              dir={isAr ? 'rtl' : 'ltr'}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#FCAD0F'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-11 h-11 ${game.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                  {game.icon}
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${game.badge}`}>
+                  {isAr ? 'لعبة جماعية' : 'Team game'}
+                </span>
+              </div>
+              <h3 className="font-bold text-base mb-1.5 leading-tight" style={{ color: '#0E1F39' }}>
+                {isAr ? game.titleAr : game.titleEn}
+              </h3>
+              <p className="text-slate-500 text-xs leading-relaxed">
+                {isAr ? game.descAr : game.descEn}
+              </p>
+              <div className="absolute bottom-4 end-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: '#FCAD0F' }}>
+                  <span className="text-sm font-black" style={{ color: '#0E1F39' }}>{isAr ? '←' : '→'}</span>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
 
         <div className="flex items-center justify-between mb-6">
           <div>

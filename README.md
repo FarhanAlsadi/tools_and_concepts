@@ -5,6 +5,13 @@ and labs (brute-force, ciphers, VPN, DoS/DDoS, phishing, ransomware, and a
 real-command Linux track with Gobuster & Hydra), all running as safe
 client-side simulations.
 
+The site is titled **«الأمن السيبراني والاختراقات»** and includes two
+projector-friendly **team games**: *Quiz Tic-Tac-Toe* (`/games/xo` — to claim
+a square your team must answer a cybersecurity question within 30 seconds;
+questions come from a built-in bank or any saved trainer quiz) and a *Memory
+Game* (`/games/memory` — a 3×3 board of icons shows for 10 seconds, then teams
+find the matching pairs with the fewest mistakes).
+
 It also includes a **Live Quiz** — a Kahoot-style game for training sessions:
 the trainer builds a quiz at `/host` (PIN-protected; in-app editor or Excel
 import with a downloadable template), attendees join at `/play` with a 6-digit
